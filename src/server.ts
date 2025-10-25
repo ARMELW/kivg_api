@@ -5,6 +5,7 @@ import {
   ChannelController,
   ExportController,
   PermissionController,
+  PricingController,
   ProjectController,
   SceneController,
   TemplateController,
@@ -16,6 +17,7 @@ import { UploadController } from './infrastructure/controllers/upload.controller
 const app = new App([
   new UserController(),
   new PermissionController(),
+  new PricingController(),
   new UploadController(),
   new HealthController(),
   new AssetController(),

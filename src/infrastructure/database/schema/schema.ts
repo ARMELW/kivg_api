@@ -18,6 +18,7 @@ export const users = pgTable('users', {
   hasUsedTrial: boolean('has_used_trial').notNull().default(false),
   trialStartDate: timestamp('trial_start_date'),
   trialEndDate: timestamp('trial_end_date'),
+  subscriptionPlan: text('subscription_plan').notNull().default('free'),
   stripeCustomerId: text('stripe_customer_id').unique(),
   stripeSubscriptionId: text('stripe_subscription_id').unique(),
   stripePriceId: text('stripe_price_id'),
@@ -89,6 +90,24 @@ export const subscriptionHistory = pgTable('subscription_history', {
   currency: text('currency'),
   status: text('status').notNull(),
   timestamp: timestamp('timestamp').notNull().defaultNow()
+})
+
+export const billingHistory = pgTable('billing_history', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  stripeInvoiceId: text('stripe_invoice_id').unique(),
+  stripePaymentIntentId: text('stripe_payment_intent_id'),
+  amount: integer('amount').notNull(), // in cents
+  currency: text('currency').notNull().default('eur'),
+  status: text('status').notNull(), // paid, pending, failed, refunded
+  plan: text('plan').notNull(),
+  interval: text('interval'), // monthly, yearly
+  invoiceUrl: text('invoice_url'),
+  pdfUrl: text('pdf_url'),
+  metadata: jsonb('metadata').$type<Record<string, any>>(),
+  createdAt: timestamp('created_at').notNull().defaultNow()
 })
 
 export const roles = pgTable('roles', {
