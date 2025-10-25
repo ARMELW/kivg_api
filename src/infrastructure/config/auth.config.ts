@@ -28,6 +28,18 @@ export const auth = betterAuth({
     }),
     adminPlugin()
   ],
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID || '',
+      clientSecret: env.GOOGLE_CLIENT_SECRET || '',
+      enabled: !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET)
+    },
+    github: {
+      clientId: env.GITHUB_CLIENT_ID || '',
+      clientSecret: env.GITHUB_CLIENT_SECRET || '',
+      enabled: !!(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET)
+    }
+  },
   database: drizzleAdapter(db, {
     provider: 'pg',
     usePlural: true
@@ -47,6 +59,7 @@ export const auth = betterAuth({
       isTrialActive: { type: 'boolean', default: false, returned: true },
       trialStartDate: { type: 'date', default: null, returned: true },
       trialEndDate: { type: 'date', default: null, returned: true },
+      subscriptionPlan: { type: 'string', default: 'free', returned: true },
       stripeCustomerId: { type: 'string', default: '', returned: true },
       stripeSubscriptionId: { type: 'string', default: '', returned: true },
       stripePriceId: { type: 'string', default: '', returned: true },
