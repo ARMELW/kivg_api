@@ -57,8 +57,7 @@ export function rateLimitMiddleware(config: RateLimitConfig) {
       // Track the request based on response status
       const status = c.res.status
       const shouldCount =
-        !(skipSuccessfulRequests && status >= 200 && status < 400) &&
-        !(skipFailedRequests && status >= 400)
+        !(skipSuccessfulRequests && status >= 200 && status < 400) && !(skipFailedRequests && status >= 400)
 
       if (shouldCount) {
         await cacheService.increment(key, Math.floor(windowMs / 1000))

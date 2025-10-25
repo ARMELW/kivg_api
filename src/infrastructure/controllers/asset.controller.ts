@@ -1,18 +1,30 @@
 import { Buffer } from 'node:buffer'
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
+import { CacheKeys } from '@/application/services/cache.service'
+import { ImageProcessingService } from '@/application/services/image-processing.service'
 import type { Routes } from '@/domain/types'
 import { uploadFile } from '../config/upload.config'
+import { cacheMiddleware, invalidateCacheMiddleware } from '../middlewares/cache.middleware'
+import { rateLimitMiddleware, RateLimits } from '../middlewares/rate-limit.middleware'
+import { AssetRepository } from '../repositories/asset.repository'
 
 export class AssetController implements Routes {
   public controller: OpenAPIHono
+  private assetRepository: AssetRepository
+  private imageProcessingService: ImageProcessingService
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.assetRepository = new AssetRepository()
+    this.imageProcessingService = new ImageProcessingService()
     this.initRoutes()
   }
 
   public initRoutes() {
+    // Apply rate limiting to upload endpoints
+    this.controller.use('/v1/assets/upload', rateLimitMiddleware(RateLimits.UPLOAD))
+
     // Upload Asset
     this.controller.openapi(
       createRoute({
@@ -72,7 +84,11 @@ export class AssetController implements Routes {
           const formData = await c.req.formData()
           const file = formData.get('file') as File
           const name = (formData.get('name') as string) || file.name
-          const category = (formData.get('category') as string) || 'other'
+          const categoryStr = formData.get('category') as string
+          const category: 'illustration' | 'icon' | 'background' | 'other' =
+            categoryStr && ['illustration', 'icon', 'background', 'other'].includes(categoryStr)
+              ? (categoryStr as 'illustration' | 'icon' | 'background' | 'other')
+              : 'other'
           const tagsStr = formData.get('tags') as string
           const tags = tagsStr ? JSON.parse(tagsStr) : []
 
@@ -91,24 +107,38 @@ export class AssetController implements Routes {
           }
 
           const buffer = Buffer.from(await file.arrayBuffer())
-          const uploadResult = await uploadFile(buffer, 'assets')
 
-          const asset = {
-            id: crypto.randomUUID(),
+          // Process image - optimize and generate thumbnail
+          const processedBuffer = await this.imageProcessingService.processImage(buffer, {
+            quality: 85,
+            format: 'webp'
+          })
+
+          const thumbnailBuffer = await this.imageProcessingService.generateThumbnail(buffer, {
+            width: 300,
+            height: 300,
+            quality: 70,
+            format: 'webp'
+          })
+
+          const metadata = await this.imageProcessingService.getMetadata(buffer)
+
+          // Upload processed image and thumbnail
+          const uploadResult = await uploadFile(processedBuffer, 'assets')
+          const thumbnailResult = await uploadFile(thumbnailBuffer, 'assets/thumbnails')
+
+          const asset = await this.assetRepository.create({
             userId: user.id,
             name,
             url: uploadResult.url,
-            thumbnailUrl: uploadResult.url,
-            type: file.type,
-            size: file.size,
+            thumbnailUrl: thumbnailResult.url,
+            type: 'image/webp',
+            size: processedBuffer.length,
+            width: metadata.width,
+            height: metadata.height,
             tags,
-            category,
-            usageCount: 0,
-            uploadedAt: new Date().toISOString()
-          }
-
-          // In a real implementation, save to database here
-          // await assetRepository.create(asset)
+            category
+          })
 
           return c.json({
             success: true,
@@ -125,6 +155,19 @@ export class AssetController implements Routes {
           )
         }
       }
+    )
+
+    // Apply caching to list assets
+    this.controller.use(
+      '/v1/assets',
+      cacheMiddleware({
+        ttl: 300, // 5 minutes
+        keyGenerator: (c) => {
+          const user = c.get('user')
+          const query = c.req.query()
+          return CacheKeys.assets(user?.id || 'anonymous', JSON.stringify(query))
+        }
+      })
     )
 
     // List Assets
@@ -174,13 +217,19 @@ export class AssetController implements Routes {
           const page = Number.parseInt(query.page || '1')
           const limit = Number.parseInt(query.limit || '20')
 
-          // In a real implementation, fetch from database
-          // const result = await assetRepository.findAll({ userId: user.id, skip: (page - 1) * limit, limit, ...query })
+          const result = await this.assetRepository.findAll({
+            userId: user.id,
+            skip: (page - 1) * limit,
+            limit,
+            category: query.category,
+            sortBy: query.sortBy,
+            sortOrder: query.sortOrder
+          })
 
           return c.json({
             success: true,
-            data: [],
-            total: 0,
+            data: result.assets,
+            total: result.total,
             page,
             limit
           })
@@ -194,6 +243,15 @@ export class AssetController implements Routes {
           )
         }
       }
+    )
+
+    // Apply caching to single asset endpoint
+    this.controller.use(
+      '/v1/assets/:id',
+      cacheMiddleware({
+        ttl: 600, // 10 minutes
+        keyGenerator: (c) => CacheKeys.asset(c.req.param('id'))
+      })
     )
 
     // Get Asset by ID
@@ -243,15 +301,14 @@ export class AssetController implements Routes {
 
           const { id } = c.req.param()
 
-          // In a real implementation:
-          // const asset = await assetRepository.findById(id)
-          // if (!asset || asset.userId !== user.id) {
-          //   return c.json({ success: false, error: 'Asset not found' }, 404)
-          // }
+          const asset = await this.assetRepository.findById(id)
+          if (!asset || asset.userId !== user.id) {
+            return c.json({ success: false, error: 'Asset not found' }, 404)
+          }
 
           return c.json({
             success: true,
-            data: { id, message: 'Asset would be returned here' }
+            data: asset
           })
         } catch {
           return c.json(
@@ -313,12 +370,23 @@ export class AssetController implements Routes {
           const { id } = c.req.param()
           const body = await c.req.json()
 
-          // In a real implementation:
-          // const asset = await assetRepository.update(id, body)
+          const asset = await this.assetRepository.findById(id)
+          if (!asset || asset.userId !== user.id) {
+            return c.json({ success: false, error: 'Asset not found' }, 404)
+          }
+
+          const updated = await this.assetRepository.update(id, body)
+
+          // Invalidate caches
+          await invalidateCacheMiddleware([
+            CacheKeys.asset(id),
+            `${CacheKeys.assets(user.id, '')}*`,
+            CacheKeys.assetStats(user.id)
+          ])(c, async () => {})
 
           return c.json({
             success: true,
-            data: { id, ...body, updatedAt: new Date().toISOString() }
+            data: updated
           })
         } catch {
           return c.json(
@@ -369,12 +437,19 @@ export class AssetController implements Routes {
 
           const { id } = c.req.param()
 
-          // In a real implementation:
-          // const asset = await assetRepository.findById(id)
-          // if (asset && asset.url) {
-          //   await deleteFile(extractPublicId(asset.url))
-          // }
-          // await assetRepository.delete(id)
+          const asset = await this.assetRepository.findById(id)
+          if (!asset || asset.userId !== user.id) {
+            return c.json({ success: false, error: 'Asset not found' }, 404)
+          }
+
+          await this.assetRepository.delete(id)
+
+          // Invalidate caches
+          await invalidateCacheMiddleware([
+            CacheKeys.asset(id),
+            `${CacheKeys.assets(user.id, '')}*`,
+            CacheKeys.assetStats(user.id)
+          ])(c, async () => {})
 
           return c.json({
             success: true,
@@ -429,19 +504,11 @@ export class AssetController implements Routes {
             return c.json({ success: false, error: 'Unauthorized' }, 401)
           }
 
-          // In a real implementation:
-          // const stats = await assetRepository.getStats(user.id)
+          const stats = await this.assetRepository.getStats(user.id)
 
           return c.json({
             success: true,
-            data: {
-              totalAssets: 0,
-              totalSize: 0,
-              totalSizeMB: '0.00',
-              assetsByCategory: {},
-              mostUsedAssets: [],
-              recentlyUploaded: []
-            }
+            data: stats
           })
         } catch {
           return c.json(

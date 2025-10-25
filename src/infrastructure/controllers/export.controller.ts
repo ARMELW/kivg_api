@@ -1,16 +1,23 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import type { Routes } from '@/domain/types'
+import { rateLimitMiddleware, RateLimits } from '../middlewares/rate-limit.middleware'
+import { ExportRepository } from '../repositories/export.repository'
 
 export class ExportController implements Routes {
   public controller: OpenAPIHono
+  private exportRepository: ExportRepository
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.exportRepository = new ExportRepository()
     this.initRoutes()
   }
 
   public initRoutes() {
+    // Apply rate limiting to export endpoints
+    this.controller.use('/v1/export/*', rateLimitMiddleware(RateLimits.EXPORT))
+
     // Export Scene
     this.controller.openapi(
       createRoute({
@@ -66,14 +73,13 @@ export class ExportController implements Routes {
           const { id } = c.req.param()
           const body = await c.req.json()
 
-          const exportJob = {
-            exportId: crypto.randomUUID(),
+          const exportJob = await this.exportRepository.create({
+            userId: user.id,
             sceneId: id,
             format: body.format,
-            status: 'processing',
-            progress: 0,
-            createdAt: new Date().toISOString()
-          }
+            quality: body.quality,
+            resolution: body.resolution
+          })
 
           return c.json({ success: true, data: exportJob })
         } catch {

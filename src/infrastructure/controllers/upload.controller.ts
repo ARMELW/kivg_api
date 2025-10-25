@@ -1,17 +1,24 @@
 import { Buffer } from 'node:buffer'
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
+import { ImageProcessingService } from '@/application/services/image-processing.service'
 import { deleteFile, uploadFile } from '../config/upload.config'
+import { rateLimitMiddleware, RateLimits } from '../middlewares/rate-limit.middleware'
 
 export class UploadController {
   public controller: OpenAPIHono
+  private imageProcessingService: ImageProcessingService
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.imageProcessingService = new ImageProcessingService()
     this.initRoutes()
   }
 
   public initRoutes() {
+    // Apply rate limiting to upload endpoints
+    this.controller.use('/v1/upload', rateLimitMiddleware(RateLimits.UPLOAD))
+
     this.controller.openapi(
       createRoute({
         method: 'post',
@@ -75,7 +82,21 @@ export class UploadController {
             return c.json({ success: false, error: 'No file provided' }, 400)
           }
 
-          const buffer = Buffer.from(await file.arrayBuffer())
+          let buffer = Buffer.from(await file.arrayBuffer()) as Buffer
+
+          // Process image if it's an image file
+          if (file.type.startsWith('image/')) {
+            try {
+              buffer = (await this.imageProcessingService.processImage(buffer, {
+                quality: 85,
+                format: 'webp'
+              })) as Buffer
+            } catch (error) {
+              console.error('Image processing error:', error)
+              // Continue with original buffer if processing fails
+            }
+          }
+
           const result = await uploadFile(buffer, folder)
 
           return c.json({

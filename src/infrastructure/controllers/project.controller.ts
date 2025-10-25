@@ -1,12 +1,15 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import type { Routes } from '@/domain/types'
+import { ProjectRepository } from '../repositories/project.repository'
 
 export class ProjectController implements Routes {
   public controller: OpenAPIHono
+  private projectRepository: ProjectRepository
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.projectRepository = new ProjectRepository()
     this.initRoutes()
   }
 
@@ -64,18 +67,16 @@ export class ProjectController implements Routes {
           const { channelId } = c.req.param()
           const body = await c.req.json()
 
-          const project = {
-            id: crypto.randomUUID(),
+          const project = await this.projectRepository.create({
             userId: user.id,
             channelId,
-            ...body,
-            thumbnailUrl: null,
-            duration: 0,
-            status: 'draft',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            deletedAt: null
-          }
+            title: body.title,
+            description: body.description,
+            aspectRatio: body.aspectRatio,
+            resolution: body.resolution,
+            fps: body.fps,
+            status: 'draft'
+          })
 
           return c.json({ success: true, data: project }, 201)
         } catch {
@@ -129,14 +130,25 @@ export class ProjectController implements Routes {
             return c.json({ success: false, error: 'Unauthorized' }, 401)
           }
 
+          const { channelId } = c.req.param()
           const query = c.req.query()
           const page = Number.parseInt(query.page || '1')
           const limit = Number.parseInt(query.limit || '20')
 
+          const result = await this.projectRepository.findAll({
+            channelId,
+            status: query.status,
+            skip: (page - 1) * limit,
+            limit,
+            sortBy: query.sortBy,
+            sortOrder: query.sortOrder,
+            search: query.search
+          })
+
           return c.json({
             success: true,
-            data: [],
-            total: 0,
+            data: result.projects,
+            total: result.total,
             page,
             limit
           })
@@ -182,9 +194,18 @@ export class ProjectController implements Routes {
 
           const { id } = c.req.param()
 
+          const project = await this.projectRepository.findById(id)
+          if (!project) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+          }
+
+          if (project.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
           return c.json({
             success: true,
-            data: { id, message: 'Project would be returned here' }
+            data: project
           })
         } catch {
           return c.json({ success: false, error: 'Failed to fetch project' }, 400)
@@ -240,9 +261,20 @@ export class ProjectController implements Routes {
           const { id } = c.req.param()
           const body = await c.req.json()
 
+          const project = await this.projectRepository.findById(id)
+          if (!project) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+          }
+
+          if (project.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
+          const updated = await this.projectRepository.update(id, body)
+
           return c.json({
             success: true,
-            data: { id, ...body, updatedAt: new Date().toISOString() }
+            data: updated
           })
         } catch {
           return c.json({ success: false, error: 'Failed to update project' }, 400)
@@ -296,14 +328,18 @@ export class ProjectController implements Routes {
           const { id } = c.req.param()
           const body = await c.req.json()
 
-          const duplicatedProject = {
-            id: crypto.randomUUID(),
-            originalId: id,
-            ...body,
-            createdAt: new Date().toISOString()
+          const project = await this.projectRepository.findById(id)
+          if (!project) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
           }
 
-          return c.json({ success: true, data: duplicatedProject }, 201)
+          if (project.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
+          const duplicated = await this.projectRepository.duplicate(id, body.title)
+
+          return c.json({ success: true, data: duplicated }, 201)
         } catch {
           return c.json({ success: false, error: 'Failed to duplicate project' }, 400)
         }
@@ -346,6 +382,17 @@ export class ProjectController implements Routes {
           }
 
           const { id } = c.req.param()
+
+          const project = await this.projectRepository.findById(id)
+          if (!project) {
+            return c.json({ success: false, error: 'Project not found' }, 404)
+          }
+
+          if (project.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
+          await this.projectRepository.delete(id)
 
           return c.json({
             success: true,
