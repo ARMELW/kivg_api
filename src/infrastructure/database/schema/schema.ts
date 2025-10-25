@@ -1,4 +1,4 @@
-import { boolean, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { boolean, integer, jsonb, pgTable, real, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 import type { Action, Subject } from '../../../domain/types/permission.type'
 
 export const users = pgTable('users', {
@@ -120,4 +120,234 @@ export const userRoles = pgTable('user_roles', {
     .references(() => roles.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull()
+})
+
+// Assets (Images) table
+export const assets = pgTable('assets', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  url: text('url').notNull(),
+  thumbnailUrl: text('thumbnail_url'),
+  type: text('type').notNull(), // MIME type
+  size: integer('size').notNull(), // in bytes
+  width: integer('width'),
+  height: integer('height'),
+  tags: jsonb('tags').$type<string[]>().default([]),
+  category: text('category').notNull().default('other'), // illustration, icon, background, other
+  lastUsed: timestamp('last_used'),
+  usageCount: integer('usage_count').notNull().default(0),
+  metadata: jsonb('metadata').$type<{
+    format?: string
+    colorSpace?: string
+    hasAlpha?: boolean
+  }>(),
+  uploadedAt: timestamp('uploaded_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// Channels table
+export const channels = pgTable('channels', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  youtubeUrl: text('youtube_url'),
+  brandKit: jsonb('brand_kit').$type<{
+    logoUrl?: string | null
+    colors?: {
+      primary?: string
+      secondary?: string
+      accent?: string
+    }
+    introVideoUrl?: string | null
+    outroVideoUrl?: string | null
+    customFonts?: string | null
+  }>().default({
+    logoUrl: null,
+    colors: {
+      primary: '#3B82F6',
+      secondary: '#10B981',
+      accent: '#F59E0B'
+    },
+    introVideoUrl: null,
+    outroVideoUrl: null,
+    customFonts: null
+  }),
+  projectCount: integer('project_count').notNull().default(0),
+  totalVideosExported: integer('total_videos_exported').notNull().default(0),
+  status: text('status').notNull().default('active'), // active, archived
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// Projects table
+export const projects = pgTable('projects', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  channelId: text('channel_id')
+    .notNull()
+    .references(() => channels.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  description: text('description'),
+  thumbnailUrl: text('thumbnail_url'),
+  resolution: text('resolution').notNull().default('1080p'), // 720p, 1080p, 4k
+  aspectRatio: text('aspect_ratio').notNull().default('16:9'), // 16:9, 9:16, 1:1, 4:5
+  fps: integer('fps').notNull().default(30), // 24, 30, 60
+  duration: integer('duration').notNull().default(0), // in seconds
+  status: text('status').notNull().default('draft'), // draft, in_progress, completed
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at')
+})
+
+// Scenes table
+export const scenes = pgTable('scenes', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id')
+    .notNull()
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  content: text('content'),
+  duration: integer('duration').notNull().default(10), // in seconds
+  animation: text('animation').default('fade'),
+  backgroundImage: text('background_image'),
+  sceneImage: text('scene_image'),
+  layers: jsonb('layers').$type<
+    Array<{
+      id: string
+      name: string
+      type: 'image' | 'text' | 'shape' | 'video' | 'audio'
+      mode: 'draw' | 'static' | 'animated'
+      position: { x: number; y: number }
+      zIndex: number
+      scale: number
+      opacity: number
+      skipRate?: number
+      imagePath?: string
+      text?: string
+      locked?: boolean
+      animationType?: string
+      animationSpeed?: number
+      endDelay?: number
+      handType?: string
+    }>
+  >().default([]),
+  cameras: jsonb('cameras').$type<
+    Array<{
+      id: string
+      name: string
+      position: { x: number; y: number }
+      scale?: number
+      zoom?: number
+      width?: number
+      height?: number
+      animation?: any
+      locked?: boolean
+      isDefault?: boolean
+      duration?: number
+      transitionDuration?: number
+      easing?: string
+      pauseDuration?: number
+      movementType?: string
+    }>
+  >().default([]),
+  sceneCameras: jsonb('scene_cameras').$type<any[]>().default([]),
+  multiTimeline: jsonb('multi_timeline').$type<any>().default({}),
+  audio: jsonb('audio').$type<any>().default({}),
+  sceneAudio: jsonb('scene_audio').$type<any>(),
+  transitionType: text('transition_type').default('fade'), // none, fade, slide
+  draggingSpeed: real('dragging_speed').default(1),
+  slideDuration: integer('slide_duration').default(0),
+  syncSlideWithVoice: boolean('sync_slide_with_voice').default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// Audio Files table
+export const audioFiles = pgTable('audio_files', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  fileName: text('file_name').notNull(),
+  fileUrl: text('file_url').notNull(),
+  duration: real('duration').notNull(), // in seconds
+  size: integer('size').notNull(), // in bytes
+  category: text('category').notNull().default('other'), // music, sfx, voiceover, ambient, other
+  tags: jsonb('tags').$type<string[]>().default([]),
+  isFavorite: boolean('is_favorite').notNull().default(false),
+  trimConfig: jsonb('trim_config').$type<{
+    startTime?: number
+    endTime?: number
+  }>(),
+  fadeConfig: jsonb('fade_config').$type<{
+    fadeIn?: number
+    fadeOut?: number
+  }>(),
+  uploadedAt: timestamp('uploaded_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// Templates table
+export const templates = pgTable('templates', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+  type: text('type').notNull(), // education, marketing, presentation, tutorial, entertainment, other
+  style: text('style').notNull(), // minimal, colorful, professional, creative, dark, light
+  tags: jsonb('tags').$type<string[]>().default([]),
+  thumbnail: text('thumbnail'),
+  previewAnimation: text('preview_animation'),
+  metadata: jsonb('metadata').$type<{
+    layerCount: number
+    cameraCount: number
+    hasAudio: boolean
+    hasBackground: boolean
+    complexity: 'beginner' | 'intermediate' | 'advanced' | 'expert'
+  }>(),
+  rating: jsonb('rating').$type<{
+    average: number
+    count: number
+  }>().default({ average: 0, count: 0 }),
+  popularity: integer('popularity').notNull().default(0),
+  sceneData: jsonb('scene_data').$type<any>().notNull(),
+  version: text('version').notNull().default('1.0.0'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// Exports table (for tracking video export jobs)
+export const exports = pgTable('exports', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id')
+    .references(() => projects.id, { onDelete: 'cascade' }),
+  sceneId: text('scene_id')
+    .references(() => scenes.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  format: text('format').notNull(), // mp4, webm, mov, png, jpg
+  quality: text('quality').notNull(), // low, medium, high, ultra
+  resolution: text('resolution').notNull(), // 720p, 1080p, 4k
+  fps: integer('fps'),
+  status: text('status').notNull().default('queued'), // queued, processing, completed, failed, cancelled
+  progress: integer('progress').notNull().default(0), // 0-100
+  currentStep: text('current_step'),
+  videoUrl: text('video_url'),
+  error: text('error'),
+  estimatedDuration: integer('estimated_duration'), // in seconds
+  watermark: jsonb('watermark').$type<{
+    enabled: boolean
+    text?: string
+    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  }>(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  completedAt: timestamp('completed_at')
 })
