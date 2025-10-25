@@ -76,7 +76,7 @@ export class ExportController implements Routes {
           }
 
           return c.json({ success: true, data: exportJob })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to export scene' }, 400)
         }
       }
@@ -155,7 +155,7 @@ export class ExportController implements Routes {
           }
 
           return c.json({ success: true, data: exportJob })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to start video generation' }, 400)
         }
       }
@@ -219,7 +219,7 @@ export class ExportController implements Routes {
               completedAt: null
             }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch export status' }, 400)
         }
       }
@@ -260,7 +260,7 @@ export class ExportController implements Routes {
 
           // In real implementation, return the actual file
           return c.json({ message: 'File download would be initiated here' })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to download video' }, 400)
         }
       }
@@ -319,7 +319,7 @@ export class ExportController implements Routes {
               }
             }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch export config' }, 400)
         }
       }

@@ -79,7 +79,7 @@ export class TemplateController implements Routes {
           }
 
           return c.json({ success: true, data: template }, 201)
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to create template' }, 400)
         }
       }
@@ -130,8 +130,8 @@ export class TemplateController implements Routes {
           }
 
           const query = c.req.query()
-          const page = parseInt(query.page || '1')
-          const limit = parseInt(query.limit || '20')
+          const page = Number.parseInt(query.page || '1')
+          const limit = Number.parseInt(query.limit || '20')
 
           return c.json({
             success: true,
@@ -140,7 +140,7 @@ export class TemplateController implements Routes {
             page,
             limit
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch templates' }, 400)
         }
       }
@@ -186,7 +186,7 @@ export class TemplateController implements Routes {
             success: true,
             data: { id, message: 'Template would be returned here' }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch template' }, 400)
         }
       }
@@ -234,7 +234,7 @@ export class TemplateController implements Routes {
             template: { id, message: 'Template data would be here' },
             exportedAt: new Date().toISOString()
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to export template' }, 400)
         }
       }
@@ -292,7 +292,7 @@ export class TemplateController implements Routes {
           }
 
           return c.json({ success: true, data: importedTemplate }, 201)
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to import template' }, 400)
         }
       }
@@ -338,7 +338,7 @@ export class TemplateController implements Routes {
             success: true,
             id
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to delete template' }, 400)
         }
       }

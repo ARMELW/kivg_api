@@ -1,17 +1,17 @@
 import { App } from './app'
 import {
-  PermissionController,
-  UserController,
   AssetController,
   AudioController,
   ChannelController,
   ExportController,
+  PermissionController,
   ProjectController,
   SceneController,
-  TemplateController
+  TemplateController,
+  UserController
 } from './infrastructure/controllers'
-import { UploadController } from './infrastructure/controllers/upload.controller'
 import { HealthController } from './infrastructure/controllers/health.controller'
+import { UploadController } from './infrastructure/controllers/upload.controller'
 
 const app = new App([
   new UserController(),

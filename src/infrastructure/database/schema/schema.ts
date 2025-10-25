@@ -157,27 +157,29 @@ export const channels = pgTable('channels', {
   name: text('name').notNull(),
   description: text('description'),
   youtubeUrl: text('youtube_url'),
-  brandKit: jsonb('brand_kit').$type<{
-    logoUrl?: string | null
-    colors?: {
-      primary?: string
-      secondary?: string
-      accent?: string
-    }
-    introVideoUrl?: string | null
-    outroVideoUrl?: string | null
-    customFonts?: string | null
-  }>().default({
-    logoUrl: null,
-    colors: {
-      primary: '#3B82F6',
-      secondary: '#10B981',
-      accent: '#F59E0B'
-    },
-    introVideoUrl: null,
-    outroVideoUrl: null,
-    customFonts: null
-  }),
+  brandKit: jsonb('brand_kit')
+    .$type<{
+      logoUrl?: string | null
+      colors?: {
+        primary?: string
+        secondary?: string
+        accent?: string
+      }
+      introVideoUrl?: string | null
+      outroVideoUrl?: string | null
+      customFonts?: string | null
+    }>()
+    .default({
+      logoUrl: null,
+      colors: {
+        primary: '#3B82F6',
+        secondary: '#10B981',
+        accent: '#F59E0B'
+      },
+      introVideoUrl: null,
+      outroVideoUrl: null,
+      customFonts: null
+    }),
   projectCount: integer('project_count').notNull().default(0),
   totalVideosExported: integer('total_videos_exported').notNull().default(0),
   status: text('status').notNull().default('active'), // active, archived
@@ -219,45 +221,49 @@ export const scenes = pgTable('scenes', {
   animation: text('animation').default('fade'),
   backgroundImage: text('background_image'),
   sceneImage: text('scene_image'),
-  layers: jsonb('layers').$type<
-    Array<{
-      id: string
-      name: string
-      type: 'image' | 'text' | 'shape' | 'video' | 'audio'
-      mode: 'draw' | 'static' | 'animated'
-      position: { x: number; y: number }
-      zIndex: number
-      scale: number
-      opacity: number
-      skipRate?: number
-      imagePath?: string
-      text?: string
-      locked?: boolean
-      animationType?: string
-      animationSpeed?: number
-      endDelay?: number
-      handType?: string
-    }>
-  >().default([]),
-  cameras: jsonb('cameras').$type<
-    Array<{
-      id: string
-      name: string
-      position: { x: number; y: number }
-      scale?: number
-      zoom?: number
-      width?: number
-      height?: number
-      animation?: any
-      locked?: boolean
-      isDefault?: boolean
-      duration?: number
-      transitionDuration?: number
-      easing?: string
-      pauseDuration?: number
-      movementType?: string
-    }>
-  >().default([]),
+  layers: jsonb('layers')
+    .$type<
+      Array<{
+        id: string
+        name: string
+        type: 'image' | 'text' | 'shape' | 'video' | 'audio'
+        mode: 'draw' | 'static' | 'animated'
+        position: { x: number; y: number }
+        zIndex: number
+        scale: number
+        opacity: number
+        skipRate?: number
+        imagePath?: string
+        text?: string
+        locked?: boolean
+        animationType?: string
+        animationSpeed?: number
+        endDelay?: number
+        handType?: string
+      }>
+    >()
+    .default([]),
+  cameras: jsonb('cameras')
+    .$type<
+      Array<{
+        id: string
+        name: string
+        position: { x: number; y: number }
+        scale?: number
+        zoom?: number
+        width?: number
+        height?: number
+        animation?: any
+        locked?: boolean
+        isDefault?: boolean
+        duration?: number
+        transitionDuration?: number
+        easing?: string
+        pauseDuration?: number
+        movementType?: string
+      }>
+    >()
+    .default([]),
   sceneCameras: jsonb('scene_cameras').$type<any[]>().default([]),
   multiTimeline: jsonb('multi_timeline').$type<any>().default({}),
   audio: jsonb('audio').$type<any>().default({}),
@@ -312,10 +318,12 @@ export const templates = pgTable('templates', {
     hasBackground: boolean
     complexity: 'beginner' | 'intermediate' | 'advanced' | 'expert'
   }>(),
-  rating: jsonb('rating').$type<{
-    average: number
-    count: number
-  }>().default({ average: 0, count: 0 }),
+  rating: jsonb('rating')
+    .$type<{
+      average: number
+      count: number
+    }>()
+    .default({ average: 0, count: 0 }),
   popularity: integer('popularity').notNull().default(0),
   sceneData: jsonb('scene_data').$type<any>().notNull(),
   version: text('version').notNull().default('1.0.0'),
@@ -326,10 +334,8 @@ export const templates = pgTable('templates', {
 // Exports table (for tracking video export jobs)
 export const exports = pgTable('exports', {
   id: text('id').primaryKey(),
-  projectId: text('project_id')
-    .references(() => projects.id, { onDelete: 'cascade' }),
-  sceneId: text('scene_id')
-    .references(() => scenes.id, { onDelete: 'cascade' }),
+  projectId: text('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+  sceneId: text('scene_id').references(() => scenes.id, { onDelete: 'cascade' }),
   userId: text('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),

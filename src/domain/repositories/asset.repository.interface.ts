@@ -13,10 +13,7 @@ export interface AssetRepositoryInterface {
     sortOrder?: 'asc' | 'desc'
   }) => Promise<{ assets: Asset[]; total: number }>
   create: (data: Omit<Asset, 'id' | 'uploadedAt' | 'updatedAt' | 'usageCount'>) => Promise<Asset>
-  update: (
-    id: string,
-    data: Partial<Omit<Asset, 'id' | 'uploadedAt' | 'updatedAt' | 'userId'>>
-  ) => Promise<Asset>
+  update: (id: string, data: Partial<Omit<Asset, 'id' | 'uploadedAt' | 'updatedAt' | 'userId'>>) => Promise<Asset>
   delete: (id: string) => Promise<boolean>
   incrementUsageCount: (id: string) => Promise<void>
   getStats: (userId: string) => Promise<{

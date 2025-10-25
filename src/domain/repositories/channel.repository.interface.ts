@@ -8,11 +8,10 @@ export interface ChannelRepositoryInterface {
     skip?: number
     limit?: number
   }) => Promise<{ channels: Channel[]; total: number }>
-  create: (data: Omit<Channel, 'id' | 'createdAt' | 'updatedAt' | 'projectCount' | 'totalVideosExported'>) => Promise<Channel>
-  update: (
-    id: string,
-    data: Partial<Omit<Channel, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>
+  create: (
+    data: Omit<Channel, 'id' | 'createdAt' | 'updatedAt' | 'projectCount' | 'totalVideosExported'>
   ) => Promise<Channel>
+  update: (id: string, data: Partial<Omit<Channel, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>) => Promise<Channel>
   archive: (id: string) => Promise<Channel>
   incrementProjectCount: (id: string) => Promise<void>
   incrementVideosExported: (id: string) => Promise<void>

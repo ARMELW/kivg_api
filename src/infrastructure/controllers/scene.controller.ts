@@ -77,7 +77,7 @@ export class SceneController implements Routes {
           }
 
           return c.json({ success: true, data: scene }, 201)
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to create scene' }, 400)
         }
       }
@@ -124,8 +124,8 @@ export class SceneController implements Routes {
           }
 
           const query = c.req.query()
-          const page = parseInt(query.page || '1')
-          const limit = parseInt(query.limit || '10')
+          const page = Number.parseInt(query.page || '1')
+          const limit = Number.parseInt(query.limit || '10')
 
           return c.json({
             success: true,
@@ -134,7 +134,7 @@ export class SceneController implements Routes {
             page,
             limit
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch scenes' }, 400)
         }
       }
@@ -180,7 +180,7 @@ export class SceneController implements Routes {
             success: true,
             data: { id, message: 'Scene would be returned here' }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch scene' }, 400)
         }
       }
@@ -242,7 +242,7 @@ export class SceneController implements Routes {
             success: true,
             data: { id, ...body, updatedAt: new Date().toISOString() }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to update scene' }, 400)
         }
       }
@@ -291,7 +291,7 @@ export class SceneController implements Routes {
           }
 
           return c.json({ success: true, data: duplicatedScene }, 201)
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to duplicate scene' }, 400)
         }
       }
@@ -344,7 +344,7 @@ export class SceneController implements Routes {
             success: true,
             scenes: []
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to reorder scenes' }, 400)
         }
       }
@@ -390,7 +390,7 @@ export class SceneController implements Routes {
             success: true,
             id
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to delete scene' }, 400)
         }
       }

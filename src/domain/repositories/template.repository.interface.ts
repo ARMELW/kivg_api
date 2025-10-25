@@ -14,10 +14,7 @@ export interface TemplateRepositoryInterface {
     sortByPopularity?: boolean
   }) => Promise<{ templates: Template[]; total: number }>
   create: (data: Omit<Template, 'id' | 'createdAt' | 'updatedAt' | 'rating' | 'popularity'>) => Promise<Template>
-  update: (
-    id: string,
-    data: Partial<Omit<Template, 'id' | 'createdAt' | 'updatedAt'>>
-  ) => Promise<Template>
+  update: (id: string, data: Partial<Omit<Template, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<Template>
   delete: (id: string) => Promise<boolean>
   incrementPopularity: (id: string) => Promise<void>
 }

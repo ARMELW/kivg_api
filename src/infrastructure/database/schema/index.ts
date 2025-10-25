@@ -1,15 +1,5 @@
 import { relations, type InferModel } from 'drizzle-orm'
-import {
-  assets,
-  audioFiles,
-  channels,
-  exports,
-  projects,
-  roles,
-  scenes,
-  userRoles,
-  users
-} from './schema'
+import { assets, audioFiles, channels, exports, projects, roles, scenes, userRoles, users } from './schema'
 
 export * from './schema'
 

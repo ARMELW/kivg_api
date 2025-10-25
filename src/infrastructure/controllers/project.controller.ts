@@ -31,7 +31,10 @@ export class ProjectController implements Routes {
                   description: z.string().optional(),
                   aspectRatio: z.enum(['16:9', '9:16', '1:1', '4:5']).optional().default('16:9'),
                   resolution: z.enum(['720p', '1080p', '4k']).optional().default('1080p'),
-                  fps: z.union([z.literal(24), z.literal(30), z.literal(60)]).optional().default(30)
+                  fps: z
+                    .union([z.literal(24), z.literal(30), z.literal(60)])
+                    .optional()
+                    .default(30)
                 })
               }
             }
@@ -75,7 +78,7 @@ export class ProjectController implements Routes {
           }
 
           return c.json({ success: true, data: project }, 201)
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to create project' }, 400)
         }
       }
@@ -127,8 +130,8 @@ export class ProjectController implements Routes {
           }
 
           const query = c.req.query()
-          const page = parseInt(query.page || '1')
-          const limit = parseInt(query.limit || '20')
+          const page = Number.parseInt(query.page || '1')
+          const limit = Number.parseInt(query.limit || '20')
 
           return c.json({
             success: true,
@@ -137,7 +140,7 @@ export class ProjectController implements Routes {
             page,
             limit
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch projects' }, 400)
         }
       }
@@ -183,7 +186,7 @@ export class ProjectController implements Routes {
             success: true,
             data: { id, message: 'Project would be returned here' }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch project' }, 400)
         }
       }
@@ -241,7 +244,7 @@ export class ProjectController implements Routes {
             success: true,
             data: { id, ...body, updatedAt: new Date().toISOString() }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to update project' }, 400)
         }
       }
@@ -301,7 +304,7 @@ export class ProjectController implements Routes {
           }
 
           return c.json({ success: true, data: duplicatedProject }, 201)
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to duplicate project' }, 400)
         }
       }
@@ -349,7 +352,7 @@ export class ProjectController implements Routes {
             id,
             message: 'Project deleted successfully'
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to delete project' }, 400)
         }
       }
@@ -403,7 +406,7 @@ export class ProjectController implements Routes {
             success: true,
             savedAt: new Date().toISOString()
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to autosave project' }, 400)
         }
       }

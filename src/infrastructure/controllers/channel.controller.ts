@@ -78,7 +78,7 @@ export class ChannelController implements Routes {
           }
 
           return c.json({ success: true, data: channel }, 201)
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to create channel' }, 400)
         }
       }
@@ -124,8 +124,8 @@ export class ChannelController implements Routes {
           }
 
           const query = c.req.query()
-          const page = parseInt(query.page || '1')
-          const limit = parseInt(query.limit || '10')
+          const page = Number.parseInt(query.page || '1')
+          const limit = Number.parseInt(query.limit || '10')
 
           return c.json({
             success: true,
@@ -134,7 +134,7 @@ export class ChannelController implements Routes {
             page,
             limit
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch channels' }, 400)
         }
       }
@@ -180,7 +180,7 @@ export class ChannelController implements Routes {
             success: true,
             data: { id, message: 'Channel would be returned here' }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch channel' }, 400)
         }
       }
@@ -238,7 +238,7 @@ export class ChannelController implements Routes {
             success: true,
             data: { id, ...body, updatedAt: new Date().toISOString() }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to update channel' }, 400)
         }
       }
@@ -286,7 +286,7 @@ export class ChannelController implements Routes {
             id,
             status: 'archived'
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to archive channel' }, 400)
         }
       }
@@ -343,7 +343,7 @@ export class ChannelController implements Routes {
               lastActivity: new Date().toISOString()
             }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch stats' }, 400)
         }
       }

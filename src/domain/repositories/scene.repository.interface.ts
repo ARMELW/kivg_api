@@ -9,10 +9,7 @@ export interface SceneRepositoryInterface {
     filter?: string
   }) => Promise<{ scenes: Scene[]; total: number }>
   create: (data: Omit<Scene, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Scene>
-  update: (
-    id: string,
-    data: Partial<Omit<Scene, 'id' | 'createdAt' | 'updatedAt' | 'projectId'>>
-  ) => Promise<Scene>
+  update: (id: string, data: Partial<Omit<Scene, 'id' | 'createdAt' | 'updatedAt' | 'projectId'>>) => Promise<Scene>
   delete: (id: string) => Promise<boolean>
   duplicate: (id: string) => Promise<Scene>
   reorder: (projectId: string, sceneIds: string[]) => Promise<boolean>

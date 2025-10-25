@@ -1,8 +1,8 @@
+import { Buffer } from 'node:buffer'
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import type { Routes } from '@/domain/types'
-import { uploadFile, deleteFile } from '../config/upload.config'
-import { Buffer } from 'node:buffer'
+import { uploadFile } from '../config/upload.config'
 
 export class AssetController implements Routes {
   public controller: OpenAPIHono
@@ -171,8 +171,8 @@ export class AssetController implements Routes {
           }
 
           const query = c.req.query()
-          const page = parseInt(query.page || '1')
-          const limit = parseInt(query.limit || '20')
+          const page = Number.parseInt(query.page || '1')
+          const limit = Number.parseInt(query.limit || '20')
 
           // In a real implementation, fetch from database
           // const result = await assetRepository.findAll({ userId: user.id, skip: (page - 1) * limit, limit, ...query })
@@ -184,7 +184,7 @@ export class AssetController implements Routes {
             page,
             limit
           })
-        } catch (error: any) {
+        } catch {
           return c.json(
             {
               success: false,
@@ -253,7 +253,7 @@ export class AssetController implements Routes {
             success: true,
             data: { id, message: 'Asset would be returned here' }
           })
-        } catch (error: any) {
+        } catch {
           return c.json(
             {
               success: false,
@@ -320,7 +320,7 @@ export class AssetController implements Routes {
             success: true,
             data: { id, ...body, updatedAt: new Date().toISOString() }
           })
-        } catch (error: any) {
+        } catch {
           return c.json(
             {
               success: false,
@@ -381,7 +381,7 @@ export class AssetController implements Routes {
             id,
             message: 'Asset deleted successfully'
           })
-        } catch (error: any) {
+        } catch {
           return c.json(
             {
               success: false,
@@ -443,7 +443,7 @@ export class AssetController implements Routes {
               recentlyUploaded: []
             }
           })
-        } catch (error: any) {
+        } catch {
           return c.json(
             {
               success: false,

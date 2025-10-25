@@ -1,8 +1,8 @@
+import { Buffer } from 'node:buffer'
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import type { Routes } from '@/domain/types'
-import { uploadFile, deleteFile } from '../config/upload.config'
-import { Buffer } from 'node:buffer'
+import { uploadFile } from '../config/upload.config'
 
 export class AudioController implements Routes {
   public controller: OpenAPIHono
@@ -90,7 +90,7 @@ export class AudioController implements Routes {
           }
 
           return c.json({ success: true, data: audio })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to upload audio' }, 400)
         }
       }
@@ -138,8 +138,8 @@ export class AudioController implements Routes {
           }
 
           const query = c.req.query()
-          const page = parseInt(query.page || '1')
-          const limit = parseInt(query.limit || '20')
+          const page = Number.parseInt(query.page || '1')
+          const limit = Number.parseInt(query.limit || '20')
 
           return c.json({
             success: true,
@@ -148,7 +148,7 @@ export class AudioController implements Routes {
             page,
             limit
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch audio files' }, 400)
         }
       }
@@ -194,7 +194,7 @@ export class AudioController implements Routes {
             success: true,
             data: { id, message: 'Audio file would be returned here' }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to fetch audio file' }, 400)
         }
       }
@@ -265,7 +265,7 @@ export class AudioController implements Routes {
             success: true,
             data: { id, ...body, updatedAt: new Date().toISOString() }
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to update audio file' }, 400)
         }
       }
@@ -311,7 +311,7 @@ export class AudioController implements Routes {
             success: true,
             id
           })
-        } catch (error: any) {
+        } catch {
           return c.json({ success: false, error: 'Failed to delete audio file' }, 400)
         }
       }
