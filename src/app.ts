@@ -5,12 +5,14 @@ import { logger } from 'hono/logger'
 import { prettyJSON } from 'hono/pretty-json'
 import router, { type auth } from './infrastructure/config/auth.config'
 import { errorHandler, notFound } from './infrastructure/middlewares/error.middleware'
+import { metricsMiddleware } from './infrastructure/middlewares/metrics.middleware'
 import { responseMiddleware } from './infrastructure/middlewares/response.middleware'
 import addSession from './infrastructure/middlewares/session.middleware'
 //import addStripe from './infrastructure/middlewares/stripe.middleware'
 //import { checkTrialStatus } from './infrastructure/middlewares/trial.middleware'
 import sessionValidator from './infrastructure/middlewares/unauthorized-access.middleware'
 import { Home } from './infrastructure/pages/home'
+import { CleanupScheduler } from './infrastructure/schedulers/cleanup.scheduler'
 //import { SubscriptionScheduler } from './infrastructure/schedulers/subscription.scheduler'
 import type { Routes } from './domain/types'
 
@@ -21,6 +23,7 @@ export class App {
       session: typeof auth.$Infer.Session.session | null
     }
   }>
+  private cleanupScheduler: CleanupScheduler
   //  private subscriptionScheduler: SubscriptionScheduler
 
   constructor(routes: Routes[]) {
@@ -30,16 +33,18 @@ export class App {
         session: typeof auth.$Infer.Session.session | null
       }
     }>()
+    this.cleanupScheduler = new CleanupScheduler()
     //this.subscriptionScheduler = new SubscriptionScheduler()
     this.initializeGlobalMiddlewares()
     this.initializeRoutes(routes)
     this.initializeSwaggerUI()
     this.initializeRouteFallback()
     this.initializeErrorHandler()
-    // this.startSchedulers()
+    this.startSchedulers()
   }
 
   private startSchedulers() {
+    this.cleanupScheduler.start()
     // this.subscriptionScheduler.start()
   }
 
@@ -55,6 +60,7 @@ export class App {
   private initializeGlobalMiddlewares() {
     this.app.use(logger())
     this.app.use(prettyJSON())
+    this.app.use(metricsMiddleware())
     this.app.use(
       '*',
       cors({

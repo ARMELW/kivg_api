@@ -1,12 +1,15 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
+import { MetricsService } from '@/application/services/metrics.service'
 import type { Routes } from '@/domain/types'
 
 export class HealthController implements Routes {
   public controller: OpenAPIHono
+  private metricsService: MetricsService
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.metricsService = new MetricsService()
     this.initRoutes()
   }
 
@@ -93,6 +96,60 @@ export class HealthController implements Routes {
           buildDate: '2025-01-15',
           environment: Bun.env.NODE_ENV || 'development'
         })
+      }
+    )
+
+    // Metrics Endpoint
+    this.controller.openapi(
+      createRoute({
+        method: 'get',
+        path: '/v1/metrics',
+        security: [{ Bearer: [] }],
+        tags: ['Health'],
+        summary: 'Get system metrics',
+        responses: {
+          200: {
+            description: 'Metrics retrieved successfully',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  data: z.object({
+                    health: z.any(),
+                    errorRate: z.any()
+                  })
+                })
+              }
+            }
+          }
+        }
+      }),
+      async (c: any) => {
+        try {
+          const user = c.get('user')
+          if (!user) {
+            return c.json({ success: false, error: 'Unauthorized' }, 401)
+          }
+
+          const health = await this.metricsService.getHealthMetrics()
+          const errorRate = await this.metricsService.getErrorRate()
+
+          return c.json({
+            success: true,
+            data: {
+              health,
+              errorRate
+            }
+          })
+        } catch {
+          return c.json(
+            {
+              success: false,
+              error: 'Failed to fetch metrics'
+            },
+            500
+          )
+        }
       }
     )
   }
