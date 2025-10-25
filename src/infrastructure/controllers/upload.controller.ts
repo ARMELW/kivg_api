@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import { deleteFile, uploadFile } from '../config/upload.config'
-import type { Buffer } from 'node:buffer'
+import { Buffer } from 'node:buffer'
 
 export class UploadController {
   public controller: OpenAPIHono

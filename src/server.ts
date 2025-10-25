@@ -1,8 +1,31 @@
 import { App } from './app'
-import { PermissionController, UserController } from './infrastructure/controllers'
+import {
+  PermissionController,
+  UserController,
+  AssetController,
+  AudioController,
+  ChannelController,
+  ExportController,
+  ProjectController,
+  SceneController,
+  TemplateController
+} from './infrastructure/controllers'
 import { UploadController } from './infrastructure/controllers/upload.controller'
+import { HealthController } from './infrastructure/controllers/health.controller'
 
-const app = new App([new UserController(), new PermissionController(), new UploadController()]).getApp()
+const app = new App([
+  new UserController(),
+  new PermissionController(),
+  new UploadController(),
+  new HealthController(),
+  new AssetController(),
+  new AudioController(),
+  new ChannelController(),
+  new ExportController(),
+  new ProjectController(),
+  new SceneController(),
+  new TemplateController()
+]).getApp()
 
 const PORT = Bun.env.PORT || 3000
 
