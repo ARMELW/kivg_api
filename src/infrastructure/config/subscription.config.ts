@@ -71,8 +71,8 @@ export const pricingData: SubscriptionPlan[] = [
     description: 'Professionnel - Pour les créateurs établis',
     childLimit: 3,
     prices: {
-      monthly: 29,
-      yearly: 290
+      monthly: 39,
+      yearly: 390
     },
     stripeIds: {
       monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
@@ -90,8 +90,45 @@ export const pricingData: SubscriptionPlan[] = [
       customFonts: -1, // unlimited
       hasAIVoice: true,
       hasAIScriptGenerator: true,
+      hasAIImageGenerator: true,
+      aiVideoLimit: 30, // 30 AI videos per month
       maxCollaborators: 3,
       supportLevel: 'priority_24h',
+      hasTemplates: true,
+      hasBranding: true,
+      hasAPI: false
+    }
+  },
+  {
+    id: 'pro_plus',
+    title: 'Pro Plus',
+    description: 'Avancé - Production intensive avec musique IA',
+    childLimit: 5,
+    prices: {
+      monthly: 59,
+      yearly: 590
+    },
+    stripeIds: {
+      monthly: process.env.STRIPE_PRO_PLUS_MONTHLY_PRICE_ID || '',
+      yearly: process.env.STRIPE_PRO_PLUS_YEARLY_PRICE_ID || ''
+    },
+    features: {
+      maxScenes: -1, // unlimited
+      maxDuration: -1, // unlimited
+      exportQuality: '4k',
+      hasWatermark: false,
+      storageType: 'cloud',
+      cloudProjectsLimit: -1, // unlimited
+      maxAudioTracks: -1, // unlimited
+      assetsLibrarySize: 5000,
+      customFonts: -1, // unlimited
+      hasAIVoice: true,
+      hasAIScriptGenerator: true,
+      hasAIImageGenerator: true,
+      hasAIMusic: true,
+      aiVideoLimit: 100, // 100 AI videos per month
+      maxCollaborators: 5,
+      supportLevel: 'priority_12h',
       hasTemplates: true,
       hasBranding: true,
       hasAPI: false
@@ -103,8 +140,8 @@ export const pricingData: SubscriptionPlan[] = [
     description: 'Business - Solutions sur-mesure',
     childLimit: -1, // unlimited
     prices: {
-      monthly: 99,
-      yearly: 990
+      monthly: 149,
+      yearly: 1490
     },
     stripeIds: {
       monthly: process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || '',
@@ -122,6 +159,9 @@ export const pricingData: SubscriptionPlan[] = [
       customFonts: -1, // unlimited
       hasAIVoice: true,
       hasAIScriptGenerator: true,
+      hasAIImageGenerator: true,
+      hasAIMusic: true,
+      aiVideoLimit: 250, // 250 AI videos per month
       maxCollaborators: -1, // unlimited
       supportLevel: 'premium_4h',
       hasTemplates: true,

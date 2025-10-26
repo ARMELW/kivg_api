@@ -1,23 +1,42 @@
 import { env } from 'node:process'
+import { DalleImageGenerator } from '../services/ai/dalle-image-generator.service'
 import { ElevenLabsVoiceSynthesis } from '../services/ai/elevenlabs-voice-synthesis.service'
 import { GeminiImageGenerator } from '../services/ai/gemini-image-generator.service'
 import { GeminiScriptGenerator } from '../services/ai/gemini-script-generator.service'
+import { MiniMaxVoiceSynthesis } from '../services/ai/minimax-voice-synthesis.service'
+import { MubertMusicGenerator } from '../services/ai/mubert-music-generator.service'
 
 /**
  * AI Services Configuration
  * Centralized configuration for all AI services with provider abstraction
  */
 
-// Gemini API Key
+// API Keys
 export const GEMINI_API_KEY = env.GEMINI_API_KEY || ''
-
-// ElevenLabs API Key
 export const ELEVENLABS_API_KEY = env.ELEVENLABS_API_KEY || ''
+export const OPENAI_API_KEY = env.OPENAI_API_KEY || ''
+export const MINIMAX_API_KEY = env.MINIMAX_API_KEY || ''
+export const MUBERT_API_KEY = env.MUBERT_API_KEY || ''
 
-// Initialize AI Services
-export const imageGenerator = GEMINI_API_KEY ? new GeminiImageGenerator(GEMINI_API_KEY) : null
+// Initialize Image Generation Services (multiple providers)
+export const geminiImageGenerator = GEMINI_API_KEY ? new GeminiImageGenerator(GEMINI_API_KEY) : null
+export const dalleImageGenerator = OPENAI_API_KEY ? new DalleImageGenerator(OPENAI_API_KEY) : null
+
+// Primary image generator (prefer DALL-E for direct generation, fallback to Gemini for prompts)
+export const imageGenerator = dalleImageGenerator || geminiImageGenerator
+
+// Initialize Script Generation Service
 export const scriptGenerator = GEMINI_API_KEY ? new GeminiScriptGenerator(GEMINI_API_KEY) : null
-export const voiceSynthesis = ELEVENLABS_API_KEY ? new ElevenLabsVoiceSynthesis(ELEVENLABS_API_KEY) : null
+
+// Initialize Voice Synthesis Services (multiple providers)
+export const elevenLabsVoice = ELEVENLABS_API_KEY ? new ElevenLabsVoiceSynthesis(ELEVENLABS_API_KEY) : null
+export const minimaxVoice = MINIMAX_API_KEY ? new MiniMaxVoiceSynthesis(MINIMAX_API_KEY) : null
+
+// Primary voice synthesis (prefer ElevenLabs, fallback to MiniMax)
+export const voiceSynthesis = elevenLabsVoice || minimaxVoice
+
+// Initialize Music Generation Service
+export const musicGenerator = MUBERT_API_KEY ? new MubertMusicGenerator(MUBERT_API_KEY) : null
 
 /**
  * Check if AI services are available
@@ -26,23 +45,53 @@ export const isAIAvailable = () => {
   return {
     imageGenerator: imageGenerator?.isAvailable() || false,
     scriptGenerator: scriptGenerator?.isAvailable() || false,
-    voiceSynthesis: voiceSynthesis?.isAvailable() || false
+    voiceSynthesis: voiceSynthesis?.isAvailable() || false,
+    musicGenerator: musicGenerator?.isAvailable() || false
   }
 }
 
 /**
- * Voice synthesis configuration (deprecated - now using ElevenLabs)
+ * Get available AI providers for each service
+ */
+export const getAIProviders = () => {
+  return {
+    imageGenerators: [
+      dalleImageGenerator?.isAvailable() && 'dalle',
+      geminiImageGenerator?.isAvailable() && 'gemini'
+    ].filter(Boolean),
+    voiceProviders: [
+      elevenLabsVoice?.isAvailable() && 'elevenlabs',
+      minimaxVoice?.isAvailable() && 'minimax'
+    ].filter(Boolean),
+    scriptProviders: [scriptGenerator?.isAvailable() && 'gemini'].filter(Boolean),
+    musicProviders: [musicGenerator?.isAvailable() && 'mubert'].filter(Boolean)
+  }
+}
+
+/**
+ * Voice synthesis configuration (deprecated - now using ElevenLabs/MiniMax)
  * Kept for backward compatibility
  */
 export const VOICE_LANGUAGES = ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh'] as const
 
 /**
- * Get voices from ElevenLabs or fallback to static library
+ * Get voices from all available providers
  */
-export const getVoices = async (language?: string) => {
+export const getVoices = async (language?: string, provider?: 'elevenlabs' | 'minimax') => {
+  // If provider specified, use that specific provider
+  if (provider === 'elevenlabs' && elevenLabsVoice) {
+    return await elevenLabsVoice.listVoices(language)
+  }
+  if (provider === 'minimax' && minimaxVoice) {
+    return await minimaxVoice.listVoices(language)
+  }
+
+  // Otherwise use primary voice synthesis provider
   if (voiceSynthesis) {
     return await voiceSynthesis.listVoices(language)
   }
+
+  // Fallback to static library
   return language ? VOICE_LIBRARY.filter((v) => v.language === language) : VOICE_LIBRARY
 }
 
