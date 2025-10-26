@@ -14,15 +14,7 @@ export const users = pgTable('users', {
   banReason: text('ban_reason'),
   banExpires: timestamp('ban_expires'),
   isAdmin: boolean('is_admin').notNull().default(false),
-  isTrialActive: boolean('is_trial_active').notNull().default(false),
-  hasUsedTrial: boolean('has_used_trial').notNull().default(false),
-  trialStartDate: timestamp('trial_start_date'),
-  trialEndDate: timestamp('trial_end_date'),
   subscriptionPlan: text('subscription_plan').notNull().default('free'),
-  stripeCustomerId: text('stripe_customer_id').unique(),
-  stripeSubscriptionId: text('stripe_subscription_id').unique(),
-  stripePriceId: text('stripe_price_id'),
-  stripeCurrentPeriodEnd: timestamp('stripe_current_period_end'),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull()
 })
