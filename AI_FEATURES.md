@@ -219,6 +219,13 @@ Generate high-quality audio from text with customizable voice parameters using E
 
 **Status**: ✅ Fully implemented and production-ready with ElevenLabs integration.
 
+**Rate Limits**: 
+- ElevenLabs Free Tier: 10,000 characters/month
+- ElevenLabs Starter: 30,000 characters/month
+- ElevenLabs Creator: 100,000 characters/month
+- ElevenLabs Pro: 500,000 characters/month
+- Note: Rate limits are enforced by ElevenLabs API, not the Doodlio platform
+
 ### 5. AI Services Status
 
 Check availability of AI services.
@@ -279,13 +286,14 @@ AI features are gated by subscription plans:
 - ✅ AI Script Generator
 - ✅ AI Voice Synthesis (ElevenLabs integration)
 - ✅ Image prompt enhancement
-- ✅ 10,000 voice synthesis characters/month
+- ✅ Voice synthesis character limit based on your ElevenLabs subscription
 - ✅ Access to 40+ premium voices
+- 💡 Requires separate ElevenLabs account (Free tier: 10,000 chars/month)
 
 ### Enterprise Plan
 - ✅ All Pro features
 - ✅ Priority AI processing
-- ✅ Unlimited voice synthesis
+- ✅ Voice synthesis limits based on your ElevenLabs subscription
 - ✅ Custom voice cloning (contact sales)
 - ✅ Dedicated support
 
@@ -364,25 +372,38 @@ const voicesResponse = await fetch('https://api.doodlio.com/api/v1/ai/voices?lan
 const voicesData = await voicesResponse.json()
 console.log(voicesData.data.voices)
 
-// Synthesize voice
-const voiceSynthesisResponse = await fetch('https://api.doodlio.com/api/v1/ai/synthesize-voice', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer YOUR_TOKEN'
-  },
-  body: JSON.stringify({
-    text: 'Welcome to our video. Today we will explore the fascinating world of artificial intelligence.',
-    voice: '21m00Tcm4TlvDq8ikWAM',
-    language: 'en',
-    speed: 1.0,
-    pitch: 0
+// Synthesize voice with error handling
+try {
+  const voiceSynthesisResponse = await fetch('https://api.doodlio.com/api/v1/ai/synthesize-voice', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer YOUR_TOKEN'
+    },
+    body: JSON.stringify({
+      text: 'Welcome to our video. Today we will explore the fascinating world of artificial intelligence.',
+      voice: '21m00Tcm4TlvDq8ikWAM',
+      language: 'en',
+      speed: 1.0,
+      pitch: 0
+    })
   })
-})
 
-const voiceData = await voiceSynthesisResponse.json()
-console.log(`Audio URL: ${voiceData.data.audioUrl}`)
-console.log(`Duration: ${voiceData.data.duration} seconds`)
+  if (!voiceSynthesisResponse.ok) {
+    throw new Error(`HTTP error! status: ${voiceSynthesisResponse.status}`)
+  }
+
+  const voiceData = await voiceSynthesisResponse.json()
+  
+  if (voiceData.success) {
+    console.log(`Audio URL: ${voiceData.data.audioUrl}`)
+    console.log(`Duration: ${voiceData.data.duration} seconds`)
+  } else {
+    console.error(`Voice synthesis failed: ${voiceData.error}`)
+  }
+} catch (error) {
+  console.error(`Failed to synthesize voice: ${error.message}`)
+}
 ```
 
 ### Python
@@ -441,9 +462,16 @@ voice_response = requests.post(
     }
 )
 
-voice_data = voice_response.json()
-print(f"Audio URL: {voice_data['data']['audioUrl']}")
-print(f"Duration: {voice_data['data']['duration']} seconds")
+# Handle response with error checking
+if voice_response.status_code == 200:
+    voice_data = voice_response.json()
+    if voice_data['success']:
+        print(f"Audio URL: {voice_data['data']['audioUrl']}")
+        print(f"Duration: {voice_data['data']['duration']} seconds")
+    else:
+        print(f"Voice synthesis failed: {voice_data['error']}")
+else:
+    print(f"HTTP error: {voice_response.status_code}")
 ```
 
 ## Advanced Usage
@@ -503,34 +531,46 @@ export class ElevenLabsVoiceSynthesis implements AIVoiceSynthesis {
   private client: ElevenLabsClient
   
   async generateVoice(params) {
-    const audioStream = await this.client.textToSpeech.convert(params.voice, {
-      text: params.text,
-      modelId: 'eleven_multilingual_v2',
-      voiceSettings: {
-        stability: 0.5,
-        similarityBoost: 0.75
+    try {
+      const audioStream = await this.client.textToSpeech.convert(params.voice, {
+        text: params.text,
+        modelId: 'eleven_multilingual_v2',
+        voiceSettings: {
+          stability: 0.5,
+          similarityBoost: 0.75
+        }
+      })
+      
+      // Convert stream to buffer and upload
+      const audioBuffer = await this.streamToBuffer(audioStream)
+      const uploadResult = await uploadFile(audioBuffer, 'audio')
+      
+      return {
+        success: true,
+        audioUrl: uploadResult.url,
+        duration: this.estimateDuration(params.text)
       }
-    })
-    
-    // Convert stream to buffer and upload
-    const audioBuffer = await this.streamToBuffer(audioStream)
-    const uploadResult = await uploadFile(audioBuffer, 'audio')
-    
-    return {
-      success: true,
-      audioUrl: uploadResult.url,
-      duration: this.estimateDuration(params.text)
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to generate voice'
+      }
     }
   }
   
   async listVoices(language) {
-    const response = await this.client.voices.getAll()
-    return this.mapVoices(response.voices, language)
+    try {
+      const response = await this.client.voices.getAll()
+      return this.mapVoices(response.voices, language)
+    } catch (error: any) {
+      console.error('Failed to fetch ElevenLabs voices:', error)
+      return []
+    }
   }
 }
 ```
 
-To integrate a different TTS provider, follow the same pattern and implement the `AIVoiceSynthesis` interface.
+To integrate a different TTS provider, follow the same pattern and implement the `AIVoiceSynthesis` interface with proper error handling.
 
 ## Best Practices
 
