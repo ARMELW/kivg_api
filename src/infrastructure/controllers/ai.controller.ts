@@ -1,6 +1,14 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import type { Routes } from '@/domain/types'
-import { getVoices, imageGenerator, isAIAvailable, scriptGenerator, voiceSynthesis } from '../config/ai.config'
+import {
+  getAIProviders,
+  getVoices,
+  imageGenerator,
+  isAIAvailable,
+  musicGenerator,
+  scriptGenerator,
+  voiceSynthesis
+} from '../config/ai.config'
 
 export class AIController implements Routes {
   public controller: OpenAPIHono
@@ -28,7 +36,14 @@ export class AIController implements Routes {
                   data: z.object({
                     imageGenerator: z.boolean(),
                     scriptGenerator: z.boolean(),
-                    voiceSynthesis: z.boolean()
+                    voiceSynthesis: z.boolean(),
+                    musicGenerator: z.boolean(),
+                    providers: z.object({
+                      imageGenerators: z.array(z.string()),
+                      voiceProviders: z.array(z.string()),
+                      scriptProviders: z.array(z.string()),
+                      musicProviders: z.array(z.string())
+                    })
                   })
                 })
               }
@@ -38,21 +53,26 @@ export class AIController implements Routes {
       }),
       (c: any) => {
         const status = isAIAvailable()
+        const providers = getAIProviders()
         return c.json({
           success: true,
-          data: status
+          data: {
+            ...status,
+            providers
+          }
         })
       }
     )
 
-    // Generate image prompt
+    // Generate image prompt or direct image
     this.controller.openapi(
       createRoute({
         method: 'post',
         path: '/v1/ai/generate-image-prompt',
         tags: ['AI'],
-        summary: 'Generate enhanced image prompt',
-        description: 'Generate an enhanced prompt for image generation',
+        summary: 'Generate enhanced image prompt or direct image',
+        description:
+          'Generate an enhanced prompt for image generation (Gemini) or direct image URL (DALL-E). Returns enhanced prompt if using Gemini, or image URL if using DALL-E.',
         request: {
           body: {
             content: {
@@ -67,13 +87,15 @@ export class AIController implements Routes {
         },
         responses: {
           200: {
-            description: 'Image prompt generated successfully',
+            description: 'Image prompt or URL generated successfully',
             content: {
               'application/json': {
                 schema: z.object({
                   success: z.boolean(),
                   data: z.object({
-                    enhancedPrompt: z.string()
+                    enhancedPrompt: z.string(),
+                    imageUrl: z.string().optional(),
+                    provider: z.string()
                   })
                 })
               }
@@ -101,9 +123,102 @@ export class AIController implements Routes {
         const result = await imageGenerator.generateImage({ prompt, style })
 
         if (result.success) {
+          // DALL-E returns actual image URL, Gemini returns enhanced prompt
+          const isDalle = imageGenerator.name === 'dalle'
           return c.json({
             success: true,
-            data: { enhancedPrompt: result.imageUrl }
+            data: {
+              enhancedPrompt: isDalle ? prompt : result.imageUrl,
+              imageUrl: isDalle ? result.imageUrl : undefined,
+              provider: imageGenerator.name
+            }
+          })
+        } else {
+          return c.json({ success: false, error: result.error }, 400)
+        }
+      }
+    )
+
+    // Direct image generation endpoint
+    this.controller.openapi(
+      createRoute({
+        method: 'post',
+        path: '/v1/ai/generate-image',
+        tags: ['AI'],
+        summary: 'Generate image with DALL-E',
+        description: 'Generate a direct image using DALL-E 3',
+        request: {
+          body: {
+            content: {
+              'application/json': {
+                schema: z.object({
+                  prompt: z.string(),
+                  style: z.enum(['realistic', 'cartoon', 'anime', 'artistic', 'minimal']).optional(),
+                  size: z.enum(['1024x1024', '1024x1792', '1792x1024']).optional(),
+                  quality: z.enum(['standard', 'hd']).optional()
+                })
+              }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'Image generated successfully',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  data: z.object({
+                    imageUrl: z.string()
+                  })
+                })
+              }
+            }
+          },
+          400: {
+            description: 'Bad request',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  error: z.string()
+                })
+              }
+            }
+          },
+          503: {
+            description: 'Service unavailable',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  error: z.string()
+                })
+              }
+            }
+          }
+        }
+      }),
+      async (c: any) => {
+        if (!imageGenerator || imageGenerator.name !== 'dalle') {
+          return c.json(
+            {
+              success: false,
+              error: 'DALL-E image generation not configured. Please set OPENAI_API_KEY in environment variables.'
+            },
+            503
+          )
+        }
+
+        const params = await c.req.json()
+        const result = await imageGenerator.generateImage(params)
+
+        if (result.success) {
+          return c.json({
+            success: true,
+            data: {
+              imageUrl: result.imageUrl
+            }
           })
         } else {
           return c.json({ success: false, error: result.error }, 400)
@@ -347,6 +462,109 @@ export class AIController implements Routes {
             {
               success: false,
               error: error.message || 'Failed to synthesize voice'
+            },
+            400
+          )
+        }
+      }
+    )
+
+    // Generate music with Mubert
+    this.controller.openapi(
+      createRoute({
+        method: 'post',
+        path: '/v1/ai/generate-music',
+        tags: ['AI'],
+        summary: 'Generate background music with AI',
+        description: 'Generate AI-powered background music using Mubert',
+        request: {
+          body: {
+            content: {
+              'application/json': {
+                schema: z.object({
+                  duration: z.number().min(10).max(300),
+                  mood: z
+                    .enum(['happy', 'sad', 'energetic', 'calm', 'dramatic', 'inspiring', 'mysterious', 'romantic'])
+                    .optional(),
+                  genre: z
+                    .enum(['electronic', 'acoustic', 'classical', 'ambient', 'cinematic', 'corporate', 'pop', 'rock'])
+                    .optional(),
+                  tempo: z.enum(['slow', 'medium', 'fast']).optional()
+                })
+              }
+            }
+          }
+        },
+        responses: {
+          200: {
+            description: 'Music generated successfully',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  data: z.object({
+                    audioUrl: z.string(),
+                    duration: z.number()
+                  })
+                })
+              }
+            }
+          },
+          400: {
+            description: 'Bad request',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  error: z.string()
+                })
+              }
+            }
+          },
+          503: {
+            description: 'Service unavailable',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  error: z.string()
+                })
+              }
+            }
+          }
+        }
+      }),
+      async (c: any) => {
+        if (!musicGenerator) {
+          return c.json(
+            {
+              success: false,
+              error: 'Music generation service not configured. Please set MUBERT_API_KEY in environment variables.'
+            },
+            503
+          )
+        }
+
+        try {
+          const params = await c.req.json()
+          const result = await musicGenerator.generateMusic(params)
+
+          if (result.success) {
+            return c.json({
+              success: true,
+              data: {
+                audioUrl: result.audioUrl,
+                duration: result.duration
+              }
+            })
+          } else {
+            return c.json({ success: false, error: result.error }, 400)
+          }
+        } catch (error: any) {
+          return c.json(
+            {
+              success: false,
+              error: error.message || 'Failed to generate music'
             },
             400
           )
