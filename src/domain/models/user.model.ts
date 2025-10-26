@@ -9,14 +9,7 @@ export const User = z.object({
   emailVerified: z.boolean(),
   image: z.string().optional(),
   isAdmin: z.boolean().default(false),
-  isTrialActive: z.boolean().default(false),
-  hasUsedTrial: z.boolean().default(false),
-  trialStartDate: z.date().optional(),
-  trialEndDate: z.date().optional(),
-  stripeCustomerId: z.string().optional(),
-  stripeSubscriptionId: z.string().optional(),
-  stripePriceId: z.string().optional(),
-  stripeCurrentPeriodEnd: z.date().optional(),
+  subscriptionPlan: z.string().default('free'),
   createdAt: z.date(),
   updatedAt: z.date()
 })

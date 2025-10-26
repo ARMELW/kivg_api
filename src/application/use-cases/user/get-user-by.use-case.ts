@@ -18,8 +18,7 @@ export class GetUserByIdUseCase extends IUseCase<GetUserByIdArgs, z.infer<typeof
         createdAt: new Date(),
         updatedAt: new Date(),
         isAdmin: false,
-        isTrialActive: false,
-        hasUsedTrial: false
+        subscriptionPlan: 'free'
       }
       if (user) {
         resolve(user)

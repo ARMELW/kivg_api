@@ -129,7 +129,6 @@ export class PricingController implements Routes {
         })
       }
     )
-    )
 
     // Get billing history (authenticated)
     this.controller.openapi(

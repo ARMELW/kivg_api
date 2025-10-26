@@ -1,5 +1,4 @@
 export * from './permission.controller'
-export * from './subscription.controller'
 export * from './pricing.controller'
 export * from './user.controller'
 export * from './asset.controller'
