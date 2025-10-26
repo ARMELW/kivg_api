@@ -2,59 +2,103 @@
 
 ## Overview
 
-Doodlio API now includes AI-powered features to enhance video creation workflows. The implementation uses an abstraction layer that allows easy switching between AI providers.
+Doodlio API now includes comprehensive AI-powered features to automate video creation workflows. The implementation uses an abstraction layer that supports multiple AI providers for redundancy, cost optimization, and quality.
 
 ## Architecture
 
 ### Abstraction Layer
 
 All AI services implement standard interfaces defined in `src/domain/interfaces/ai-service.interface.ts`. This allows:
-- Easy provider switching (e.g., from Gemini to OpenAI)
+- Easy provider switching (e.g., from Gemini to OpenAI, ElevenLabs to MiniMax)
 - Consistent API across different AI services
 - Simplified testing and mocking
+- Cost optimization through provider selection
+- Failover support for high availability
 
 ### Current Implementation
 
-- **Image Generation**: Gemini (prompt enhancement)
-- **Script Generation**: Gemini
-- **Voice Synthesis**: ElevenLabs (text-to-speech)
+#### Image Generation
+- **DALL-E 3** (Primary): Direct high-quality image generation
+- **Gemini** (Fallback): Enhanced prompt generation for external services
+
+#### Script Generation
+- **Gemini Pro**: AI-powered script writing with scene breakdowns
+
+#### Voice Synthesis
+- **ElevenLabs** (Primary): Premium quality, 40+ voices, multilingual
+- **MiniMax** (Alternative): Cost-effective alternative, 32% cheaper
+
+#### Music Generation
+- **Mubert**: AI-generated background music with mood and genre control
 
 ## Features
 
-### 1. AI Image Prompt Generator
+### 1. AI Image Generation (DALL-E 3)
 
-Generate enhanced prompts for image generation services using Gemini AI.
+Generate production-ready images directly with OpenAI's DALL-E 3.
 
-**Endpoint**: `POST /api/v1/ai/generate-image-prompt`
+**Endpoint**: `POST /api/v1/ai/generate-image`
 
 **Request**:
 ```json
 {
   "prompt": "A futuristic city at sunset",
-  "style": "realistic"
+  "style": "realistic",
+  "size": "1024x1024",
+  "quality": "hd"
 }
 ```
 
-**Styles**:
-- `realistic` - Photorealistic, high detail
-- `cartoon` - Vibrant colors, playful
-- `anime` - Anime/manga style
-- `artistic` - Painterly, expressive
-- `minimal` - Minimalist, clean lines
+**Parameters**:
+- `prompt` (required): Description of the image to generate
+- `style` (optional): `realistic` | `cartoon` | `anime` | `artistic` | `minimal`
+- `size` (optional): `1024x1024` | `1024x1792` | `1792x1024` (default: `1024x1024`)
+- `quality` (optional): `standard` | `hd` (default: `standard`)
 
 **Response**:
 ```json
 {
   "success": true,
   "data": {
-    "enhancedPrompt": "Photorealistic futuristic cityscape at golden hour sunset, towering glass skyscrapers reflecting warm orange and pink hues, flying vehicles in sky, detailed urban architecture, professional photography, 8k resolution, cinematic lighting"
+    "imageUrl": "https://oaidalleapiprodscus.blob.core.windows.net/..."
   }
 }
 ```
 
-**Use Case**: Use the enhanced prompt with image generation services like DALL-E, Midjourney, or Stable Diffusion.
+**Features**:
+- Photorealistic image generation
+- Multiple aspect ratios for different use cases
+- HD quality option for premium results
+- Style-based prompt enhancement
+- Direct download URLs
 
-### 2. AI Script Generator
+**Status**: ✅ Fully implemented with DALL-E 3 integration
+
+**Cost**: 
+- Standard quality: $0.04 per image
+- HD quality: $0.08 per image
+
+### 2. AI Image Prompt Enhancement
+
+Legacy endpoint that works with both DALL-E and Gemini.
+
+**Endpoint**: `POST /api/v1/ai/generate-image-prompt`
+
+**Behavior**:
+- With DALL-E configured: Returns actual generated image URL
+- With Gemini configured: Returns enhanced prompt for external use
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "enhancedPrompt": "Enhanced prompt text or original prompt",
+    "imageUrl": "https://... (only if DALL-E is used)",
+    "provider": "dalle" | "gemini"
+  }
+}
+```
 
 Generate complete video scripts with scene breakdowns using Gemini AI.
 
@@ -208,27 +252,101 @@ Generate high-quality audio from text with customizable voice parameters using E
 - Duration estimation
 - Configurable speed and pitch
 - Support for 10+ languages
+- Automatic failover to MiniMax if ElevenLabs unavailable
 
 **Error Responses**:
 ```json
 {
   "success": false,
-  "error": "Voice synthesis service not configured. Please set ELEVENLABS_API_KEY in environment variables."
+  "error": "Voice synthesis service not configured. Please set ELEVENLABS_API_KEY or MINIMAX_API_KEY in environment variables."
 }
 ```
 
-**Status**: ✅ Fully implemented and production-ready with ElevenLabs integration.
+**Status**: ✅ Fully implemented with ElevenLabs (primary) and MiniMax (alternative) integration.
 
-**Rate Limits**: 
-- ElevenLabs Free Tier: 10,000 characters/month
-- ElevenLabs Starter: 30,000 characters/month
-- ElevenLabs Creator: 100,000 characters/month
-- ElevenLabs Pro: 500,000 characters/month
-- Note: Rate limits are enforced by ElevenLabs API, not the Doodlio platform
+**Providers**:
+- **ElevenLabs**: Premium quality, 40+ voices
+  - Free Tier: 10,000 characters/month
+  - Starter: 30,000 characters/month ($5/month)
+  - Creator: 100,000 characters/month ($22/month)
+  - Pro: 500,000 characters/month ($99/month)
+- **MiniMax**: Cost-effective alternative, ~32% cheaper
+  - Pay-as-you-go pricing
+  - 10+ voices per language
+  - Good quality multilingual support
 
-### 5. AI Services Status
+### 5. AI Music Generation (Mubert)
 
-Check availability of AI services.
+Generate AI-powered background music for videos with customizable mood, genre, and tempo.
+
+**Endpoint**: `POST /api/v1/ai/generate-music`
+
+**Request**:
+```json
+{
+  "duration": 60,
+  "mood": "inspiring",
+  "genre": "cinematic",
+  "tempo": "medium"
+}
+```
+
+**Parameters**:
+- `duration` (required): Music length in seconds (10-300)
+- `mood` (optional): Music mood
+  - `happy` - Upbeat, cheerful, positive
+  - `sad` - Melancholic, emotional
+  - `energetic` - Dynamic, powerful
+  - `calm` - Peaceful, relaxing
+  - `dramatic` - Epic, suspenseful
+  - `inspiring` - Motivational, uplifting
+  - `mysterious` - Enigmatic, atmospheric
+  - `romantic` - Tender, intimate
+- `genre` (optional): Music style
+  - `electronic` - Synthesizers, digital sounds
+  - `acoustic` - Organic instruments
+  - `classical` - Orchestral arrangements
+  - `ambient` - Atmospheric, background
+  - `cinematic` - Film soundtrack style
+  - `corporate` - Professional, background music
+  - `pop` - Contemporary, mainstream
+  - `rock` - Guitar-driven
+- `tempo` (optional): `slow` | `medium` | `fast`
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "audioUrl": "https://res.cloudinary.com/your-cloud/audio/upload/music/xyz789.mp3",
+    "duration": 60
+  }
+}
+```
+
+**Features**:
+- AI-generated royalty-free music
+- Customizable mood, genre, and tempo
+- Perfect sync with video duration
+- High-quality audio output
+- Automatic cloud storage upload
+- No copyright issues
+
+**Use Cases**:
+- Background music for videos
+- Intro/outro music
+- Transition music between scenes
+- Brand-consistent audio identity
+
+**Status**: ✅ Fully implemented with Mubert API integration.
+
+**Cost**: ~$0.25 per track generated
+
+**Available in**: Pro Plus and Enterprise plans only
+
+### 6. AI Services Status
+
+Check availability of AI services and configured providers.
 
 **Endpoint**: `GET /api/v1/ai/status`
 
@@ -239,10 +357,23 @@ Check availability of AI services.
   "data": {
     "imageGenerator": true,
     "scriptGenerator": true,
-    "voiceSynthesis": true
+    "voiceSynthesis": true,
+    "musicGenerator": true,
+    "providers": {
+      "imageGenerators": ["dalle", "gemini"],
+      "voiceProviders": ["elevenlabs", "minimax"],
+      "scriptProviders": ["gemini"],
+      "musicProviders": ["mubert"]
+    }
   }
 }
 ```
+
+**Features**:
+- Shows which AI services are available
+- Lists all configured providers per service
+- Useful for frontend to enable/disable features
+- Helps with error handling and user messaging
 
 ## Configuration
 
@@ -254,48 +385,89 @@ Add to `.env`:
 # AI Services
 GEMINI_API_KEY=your_gemini_api_key_here
 ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+MINIMAX_API_KEY=your_minimax_api_key_here
+MUBERT_API_KEY=your_mubert_api_key_here
 ```
 
 ### Getting API Keys
 
-**Gemini API Key**:
+**Gemini API Key** (Script generation):
 1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Create a new API key
 3. Add to `.env` as `GEMINI_API_KEY`
+4. **Free tier**: 60 requests/minute
 
-**ElevenLabs API Key**:
+**ElevenLabs API Key** (Voice synthesis - primary):
 1. Visit [ElevenLabs](https://elevenlabs.io/)
 2. Sign up for a free account (includes 10,000 characters/month)
 3. Go to your [Profile Settings](https://elevenlabs.io/speech-synthesis)
 4. Copy your API key
 5. Add to `.env` as `ELEVENLABS_API_KEY`
 
-**Note**: Both services have generous free tiers suitable for development and testing.
+**OpenAI API Key** (DALL-E image generation):
+1. Visit [OpenAI Platform](https://platform.openai.com/api-keys)
+2. Create a new API key
+3. Add to `.env` as `OPENAI_API_KEY`
+4. **Cost**: $0.04-$0.08 per image
+
+**MiniMax API Key** (Voice synthesis - alternative):
+1. Visit [MiniMax](https://api.minimax.chat/)
+2. Sign up for an account
+3. Get your API key from dashboard
+4. Add to `.env` as `MINIMAX_API_KEY`
+5. **Cost**: ~32% cheaper than ElevenLabs
+
+**Mubert API Key** (Music generation):
+1. Contact [Mubert](https://mubert.com/) for enterprise API access
+2. Get your API key
+3. Add to `.env` as `MUBERT_API_KEY`
+4. **Cost**: ~$0.25 per track
+
+**Note**: All services have trial options for development and testing.
 
 ## Subscription Plan Integration
 
-AI features are gated by subscription plans:
+AI features are gated by subscription plans with usage limits:
 
-### Free Plan
-- No AI features available
+### Free Plan - €0/month
+- ❌ No AI features available
+- Manual workflow only
 
-### Starter Plan
-- No AI features available
+### Starter Plan - €9/month
+- ❌ No AI features available
+- Manual workflow with cloud storage
 
-### Pro Plan
-- ✅ AI Script Generator
-- ✅ AI Voice Synthesis (ElevenLabs integration)
-- ✅ Image prompt enhancement
-- ✅ Voice synthesis character limit based on your ElevenLabs subscription
+### Pro Plan - €39/month
+- ✅ **30 AI videos/month included**
+- ✅ AI Script Generator (unlimited)
+- ✅ AI Voice Synthesis (ElevenLabs or MiniMax)
+- ✅ Direct Image Generation (DALL-E 3)
+- ✅ Image prompt enhancement (Gemini)
 - ✅ Access to 40+ premium voices
-- 💡 Requires separate ElevenLabs account (Free tier: 10,000 chars/month)
+- ✅ 10+ languages supported
+- ❌ No music generation
+- 💰 Additional videos: €1.50 each
 
-### Enterprise Plan
+### Pro Plus Plan - €59/month (NEW)
+- ✅ **100 AI videos/month included**
 - ✅ All Pro features
+- ✅ **AI Music Generation** (Mubert)
 - ✅ Priority AI processing
-- ✅ Voice synthesis limits based on your ElevenLabs subscription
+- ✅ Multiple provider options
+- ✅ 5 team collaborators
+- 💰 Additional videos: €1.00 each
+
+### Enterprise Plan - €149/month
+- ✅ **250 AI videos/month included**
+- ✅ All Pro Plus features
+- ✅ Priority AI processing (fastest)
+- ✅ Multiple provider redundancy
+- ✅ API access for automation
 - ✅ Custom voice cloning (contact sales)
 - ✅ Dedicated support
+- ✅ SLA guarantee
+- 💰 Additional videos: €0.75 each
 
 ## Error Handling
 
@@ -629,10 +801,24 @@ If you hit rate limits:
 ### Voice Synthesis Errors
 
 Common voice synthesis issues:
-- **"Voice synthesis service not configured"**: Set `ELEVENLABS_API_KEY` in environment
+- **"Voice synthesis service not configured"**: Set `ELEVENLABS_API_KEY` or `MINIMAX_API_KEY` in environment
 - **"Invalid voice ID"**: Fetch current voices from `/v1/ai/voices` endpoint
 - **"Text too long"**: Split text into chunks of 5000 characters or less
-- **"Rate limit exceeded"**: You've exceeded your ElevenLabs quota, upgrade or wait for reset
+- **"Rate limit exceeded"**: You've exceeded your provider quota, upgrade or switch provider
+
+### Music Generation Errors
+
+Common music generation issues:
+- **"Music generation service not configured"**: Set `MUBERT_API_KEY` in environment
+- **"Duration too long"**: Maximum duration is 300 seconds (5 minutes)
+- **"Generation failed"**: Check Mubert service status and API quota
+
+### Image Generation Errors
+
+Common image generation issues:
+- **"Image generator not configured"**: Set `OPENAI_API_KEY` or `GEMINI_API_KEY` in environment
+- **"Invalid size"**: Use supported sizes (1024x1024, 1024x1792, 1792x1024)
+- **"Content policy violation"**: Modify prompt to comply with OpenAI content policy
 
 ## Support
 
@@ -642,6 +828,20 @@ For AI features support:
 - GitHub Issues: https://github.com/doodlio/doodlio-api/issues
 
 ## Changelog
+
+### v2.0.0 (2025-10-26) - Major AI Provider Update
+- ✨ **NEW**: DALL-E 3 integration for direct image generation
+- ✨ **NEW**: MiniMax voice synthesis as cost-effective alternative
+- ✨ **NEW**: Mubert AI music generation
+- ✨ **NEW**: Multi-provider support for redundancy and cost optimization
+- ✨ **NEW**: Direct image generation endpoint `/v1/ai/generate-image`
+- ✨ **NEW**: Music generation endpoint `/v1/ai/generate-music`
+- 🎯 **NEW**: Pro Plus plan (€59/month) with 100 AI videos + music
+- 💰 Updated pricing: Pro (€39), Pro Plus (€59), Enterprise (€149)
+- 🔧 Enhanced status endpoint with provider information
+- 🔧 Automatic failover between voice providers
+- 📚 Comprehensive pricing strategy documentation
+- 📚 Updated API documentation for all new features
 
 ### v1.1.0 (2025-10-26)
 - ✨ **NEW**: ElevenLabs integration for voice synthesis

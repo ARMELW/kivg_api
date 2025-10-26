@@ -39,9 +39,10 @@ The Doodlio API implements a comprehensive subscription system with 4 tiers, fea
 **Ideal for**: Content creators, YouTubers, solo entrepreneurs
 
 ### 3. Pro Plan
-**Price**: €29/month or €290/year (save €58)
+**Price**: €39/month or €390/year (save €78)
 
 **Features**:
+- **30 AI videos/month** (script + voice + images)
 - Unlimited scenes
 - Unlimited duration
 - 4K Ultra HD export
@@ -49,19 +50,38 @@ The Doodlio API implements a comprehensive subscription system with 4 tiers, fea
 - Unlimited audio tracks
 - 2000+ assets
 - All fonts
-- AI voice synthesis (10 languages, 50 voices)
-- AI script generator
+- AI voice synthesis (ElevenLabs or MiniMax)
+- AI script generator (Gemini)
+- Direct image generation (DALL-E 3)
 - Collaboration (3 members)
 - Priority support (24h response)
 - Professional templates
+- **Additional AI videos: €1.50 each**
 
-**Ideal for**: Agencies, established YouTubers, professional trainers
+**Ideal for**: Content creators, established YouTubers, professional trainers
 
-### 4. Enterprise Plan
-**Price**: From €99/month (custom quote)
+### 4. Pro Plus Plan
+**Price**: €59/month or €590/year (save €118) - NEW!
 
 **Features**:
+- **100 AI videos/month** (script + voice + images + music)
 - All Pro features
+- AI music generation (Mubert)
+- Priority AI processing
+- 5000+ assets
+- Collaboration (5 members)
+- Priority support (12h response)
+- Advanced templates
+- **Additional AI videos: €1.00 each**
+
+**Ideal for**: High-volume content creators, agencies, video production teams
+
+### 5. Enterprise Plan
+**Price**: From €149/month or €1,490/year (save €298)
+
+**Features**:
+- **250 AI videos/month** with priority processing
+- All Pro Plus features
 - Unlimited team members
 - SSO (Single Sign-On)
 - Custom branding
@@ -70,6 +90,8 @@ The Doodlio API implements a comprehensive subscription system with 4 tiers, fea
 - SLA guarantee (99.9% uptime)
 - On-site training
 - Custom templates
+- Unlimited assets
+- **Additional AI videos: €0.75 each**
 
 **Ideal for**: Large companies, agencies, educational institutions
 
@@ -94,8 +116,17 @@ STRIPE_STARTER_MONTHLY_PRICE_ID=price_xxx
 STRIPE_STARTER_YEARLY_PRICE_ID=price_xxx
 STRIPE_PRO_MONTHLY_PRICE_ID=price_xxx
 STRIPE_PRO_YEARLY_PRICE_ID=price_xxx
+STRIPE_PRO_PLUS_MONTHLY_PRICE_ID=price_xxx
+STRIPE_PRO_PLUS_YEARLY_PRICE_ID=price_xxx
 STRIPE_ENTERPRISE_MONTHLY_PRICE_ID=price_xxx
 STRIPE_ENTERPRISE_YEARLY_PRICE_ID=price_xxx
+
+# AI Services
+GEMINI_API_KEY=your_gemini_api_key
+ELEVENLABS_API_KEY=your_elevenlabs_api_key
+OPENAI_API_KEY=your_openai_api_key
+MINIMAX_API_KEY=your_minimax_api_key
+MUBERT_API_KEY=your_mubert_api_key
 ```
 
 ## Database Setup
