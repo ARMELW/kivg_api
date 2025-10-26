@@ -368,3 +368,19 @@ export const exports = pgTable('exports', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   completedAt: timestamp('completed_at')
 })
+
+// AI Usage tracking for pay-per-use billing
+export const aiUsage = pgTable('ai_usage', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  month: text('month').notNull(), // Format: YYYY-MM
+  videoGenerationCount: integer('video_generation_count').notNull().default(0),
+  scriptGenerationCount: integer('script_generation_count').notNull().default(0),
+  imageGenerationCount: integer('image_generation_count').notNull().default(0),
+  voiceGenerationCount: integer('voice_generation_count').notNull().default(0),
+  musicGenerationCount: integer('music_generation_count').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})

@@ -1,5 +1,6 @@
 import { App } from './app'
 import {
+  AIUsageController,
   AssetController,
   AudioController,
   ChannelController,
@@ -11,6 +12,8 @@ import {
   TemplateController,
   UserController
 } from './infrastructure/controllers'
+import { AIController } from './infrastructure/controllers/ai.controller'
+import { FontController } from './infrastructure/controllers/font.controller'
 import { HealthController } from './infrastructure/controllers/health.controller'
 import { UploadController } from './infrastructure/controllers/upload.controller'
 
@@ -26,7 +29,10 @@ const app = new App([
   new ExportController(),
   new ProjectController(),
   new SceneController(),
-  new TemplateController()
+  new TemplateController(),
+  new AIController(),
+  new AIUsageController(),
+  new FontController()
 ]).getApp()
 
 const PORT = Bun.env.PORT || 3000
