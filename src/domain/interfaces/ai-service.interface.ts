@@ -12,7 +12,7 @@ export interface AIServiceProvider {
   /**
    * Check if the provider is available and configured
    */
-  isAvailable(): boolean
+  isAvailable: () => boolean
 }
 
 /**
@@ -32,7 +32,7 @@ export interface AIImageGeneratorResponse {
 }
 
 export interface AIImageGenerator extends AIServiceProvider {
-  generateImage(params: AIImageGeneratorParams): Promise<AIImageGeneratorResponse>
+  generateImage: (params: AIImageGeneratorParams) => Promise<AIImageGeneratorResponse>
 }
 
 /**
@@ -54,8 +54,8 @@ export interface AIVoiceSynthesisResponse {
 }
 
 export interface AIVoiceSynthesis extends AIServiceProvider {
-  generateVoice(params: AIVoiceSynthesisParams): Promise<AIVoiceSynthesisResponse>
-  listVoices(language?: string): Promise<AIVoice[]>
+  generateVoice: (params: AIVoiceSynthesisParams) => Promise<AIVoiceSynthesisResponse>
+  listVoices: (language?: string) => Promise<AIVoice[]>
 }
 
 export interface AIVoice {
@@ -93,5 +93,5 @@ export interface ScriptScene {
 }
 
 export interface AIScriptGenerator extends AIServiceProvider {
-  generateScript(params: AIScriptGeneratorParams): Promise<AIScriptGeneratorResponse>
+  generateScript: (params: AIScriptGeneratorParams) => Promise<AIScriptGeneratorResponse>
 }

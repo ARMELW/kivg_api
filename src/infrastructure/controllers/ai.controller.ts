@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import type { Routes } from '@/domain/types'
-import { imageGenerator, scriptGenerator, VOICE_LIBRARY, getVoicesByLanguage, isAIAvailable } from '../config/ai.config'
+import { getVoices, imageGenerator, isAIAvailable, scriptGenerator, voiceSynthesis } from '../config/ai.config'
 
 export class AIController implements Routes {
   public controller: OpenAPIHono
@@ -40,10 +40,7 @@ export class AIController implements Routes {
         const status = isAIAvailable()
         return c.json({
           success: true,
-          data: {
-            ...status,
-            voiceSynthesis: true // Always available as it's configured
-          }
+          data: status
         })
       }
     )
@@ -233,46 +230,81 @@ export class AIController implements Routes {
           }
         }
       }),
-      (c: any) => {
-        const { language } = c.req.query()
-        const voices = language ? getVoicesByLanguage(language) : VOICE_LIBRARY
+      async (c: any) => {
+        try {
+          const { language } = c.req.query()
+          const voices = await getVoices(language)
 
-        return c.json({
-          success: true,
-          data: {
-            voices,
-            total: voices.length
-          }
-        })
+          return c.json({
+            success: true,
+            data: {
+              voices,
+              total: voices.length
+            }
+          })
+        } catch (error: any) {
+          return c.json(
+            {
+              success: false,
+              error: error.message || 'Failed to fetch voices'
+            },
+            500
+          )
+        }
       }
     )
 
-    // Placeholder for voice synthesis
+    // Voice synthesis with ElevenLabs
     this.controller.openapi(
       createRoute({
         method: 'post',
         path: '/v1/ai/synthesize-voice',
         tags: ['AI'],
-        summary: 'Synthesize voice (placeholder)',
-        description: 'Generate voice audio from text (requires TTS service integration)',
+        summary: 'Synthesize voice with ElevenLabs',
+        description: 'Generate voice audio from text using ElevenLabs TTS',
         request: {
           body: {
             content: {
               'application/json': {
                 schema: z.object({
-                  text: z.string(),
+                  text: z.string().min(1).max(5000),
                   voice: z.string(),
-                  language: z.string(),
-                  speed: z.number().optional(),
-                  pitch: z.number().optional()
+                  language: z.enum(['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh']),
+                  speed: z.number().min(0.5).max(2).optional().default(1),
+                  pitch: z.number().min(-20).max(20).optional().default(0)
                 })
               }
             }
           }
         },
         responses: {
-          501: {
-            description: 'Not implemented',
+          200: {
+            description: 'Voice synthesized successfully',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  data: z.object({
+                    audioUrl: z.string(),
+                    duration: z.number()
+                  })
+                })
+              }
+            }
+          },
+          400: {
+            description: 'Bad request',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  error: z.string()
+                })
+              }
+            }
+          },
+          503: {
+            description: 'Service unavailable',
             content: {
               'application/json': {
                 schema: z.object({
@@ -284,11 +316,41 @@ export class AIController implements Routes {
           }
         }
       }),
-      (c: any) => {
-        return c.json({
-          success: false,
-          error: 'Voice synthesis requires integration with a TTS service (e.g., Google Cloud TTS, Azure TTS, ElevenLabs)'
-        }, 501)
+      async (c: any) => {
+        if (!voiceSynthesis) {
+          return c.json(
+            {
+              success: false,
+              error: 'Voice synthesis service not configured. Please set ELEVENLABS_API_KEY in environment variables.'
+            },
+            503
+          )
+        }
+
+        try {
+          const params = await c.req.json()
+          const result = await voiceSynthesis.generateVoice(params)
+
+          if (result.success) {
+            return c.json({
+              success: true,
+              data: {
+                audioUrl: result.audioUrl,
+                duration: result.duration
+              }
+            })
+          } else {
+            return c.json({ success: false, error: result.error }, 400)
+          }
+        } catch (error: any) {
+          return c.json(
+            {
+              success: false,
+              error: error.message || 'Failed to synthesize voice'
+            },
+            400
+          )
+        }
       }
     )
   }
