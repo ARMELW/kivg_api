@@ -10,8 +10,11 @@ export type SubscriptionPlanFeatures = {
   customFonts: number // -1 for unlimited
   hasAIVoice: boolean
   hasAIScriptGenerator: boolean
+  hasAIImageGenerator?: boolean // Direct image generation with DALL-E
+  hasAIMusic?: boolean // AI music generation with Mubert
+  aiVideoLimit?: number // Number of AI videos per month, -1 for unlimited
   maxCollaborators: number // -1 for unlimited
-  supportLevel: 'forum' | 'email_48h' | 'priority_24h' | 'premium_4h'
+  supportLevel: 'forum' | 'email_48h' | 'priority_24h' | 'priority_12h' | 'premium_4h'
   hasTemplates: boolean
   hasBranding: boolean
   hasAPI: boolean
