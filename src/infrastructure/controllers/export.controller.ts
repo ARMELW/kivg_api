@@ -203,7 +203,7 @@ export class ExportController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -255,14 +255,14 @@ export class ExportController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
             return c.json({ success: false, error: 'Unauthorized' }, 401)
           }
 
-          const { exportId } = c.req.param()
+          //  const { exportId } = c.req.param()
 
           // In real implementation, return the actual file
           return c.json({ message: 'File download would be initiated here' })
@@ -304,7 +304,7 @@ export class ExportController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {

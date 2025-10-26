@@ -1,4 +1,5 @@
 import sharp from 'sharp'
+import type { Buffer } from 'node:buffer'
 
 export interface ImageProcessingOptions {
   width?: number

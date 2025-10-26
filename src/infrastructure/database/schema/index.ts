@@ -1,7 +1,14 @@
 import { relations, type InferModel } from 'drizzle-orm'
-import { assets, audioFiles, channels, exports, projects, roles, scenes, userRoles, users } from './schema'
+import { aiUsage, assets, audioFiles, channels, exports, projects, roles, scenes, userRoles, users } from './schema'
 
 export * from './schema'
+
+export const aiUsageRelations = relations(aiUsage, ({ one }) => ({
+  user: one(users, {
+    fields: [aiUsage.userId],
+    references: [users.id]
+  })
+}))
 
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
   user: one(roles, {

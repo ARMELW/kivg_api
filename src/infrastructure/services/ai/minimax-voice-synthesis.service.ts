@@ -34,7 +34,7 @@ export class MiniMaxVoiceSynthesis implements AIVoiceSynthesis {
       const response = await fetch(`${this.baseUrl}/t2a_v2`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -85,7 +85,7 @@ export class MiniMaxVoiceSynthesis implements AIVoiceSynthesis {
       // Fetch voices from MiniMax API
       const response = await fetch(`${this.baseUrl}/voices`, {
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
         }
       })
@@ -98,13 +98,14 @@ export class MiniMaxVoiceSynthesis implements AIVoiceSynthesis {
       const data = await response.json()
 
       // Map MiniMax voices to our interface
-      this.voiceCache = data.voices?.map((voice: any) => ({
-        id: voice.voice_id,
-        name: voice.name,
-        language: this.normalizeLanguage(voice.language),
-        gender: voice.gender || this.inferGender(voice.name),
-        style: voice.style || 'general'
-      })) || []
+      this.voiceCache =
+        data.voices?.map((voice: any) => ({
+          id: voice.voice_id,
+          name: voice.name,
+          language: this.normalizeLanguage(voice.language),
+          gender: voice.gender || this.inferGender(voice.name),
+          style: voice.style || 'general'
+        })) || []
 
       // Set cache expiry to 1 hour from now
       this.cacheExpiry = now + 3600000

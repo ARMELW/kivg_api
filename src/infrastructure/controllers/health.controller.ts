@@ -41,7 +41,7 @@ export class HealthController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           return c.json({
             status: 'healthy',
@@ -89,7 +89,7 @@ export class HealthController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         return c.json({
           version: '1.0.0',
           apiVersion: 'v1',

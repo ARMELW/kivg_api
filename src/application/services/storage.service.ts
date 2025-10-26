@@ -1,4 +1,6 @@
+import { Buffer } from 'node:buffer'
 import { randomUUID } from 'node:crypto'
+import process from 'node:process'
 import { MINIO_BUCKETS, minioClient } from '@/infrastructure/config/minio.config'
 import type { Readable } from 'node:stream'
 
@@ -180,7 +182,7 @@ export class StorageService {
   /**
    * List files in a bucket
    */
-  async listFiles(bucket: string, prefix?: string): Promise<string[]> {
+  listFiles(bucket: string, prefix?: string): Promise<string[]> {
     try {
       const stream = minioClient.listObjects(bucket, prefix, true)
       const files: string[] = []

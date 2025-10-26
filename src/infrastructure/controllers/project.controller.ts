@@ -442,7 +442,7 @@ export class ProjectController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {

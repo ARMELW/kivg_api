@@ -17,7 +17,7 @@ redis.on('error', (error) => {
 })
 
 redis.on('connect', () => {
-  console.log('Redis connected successfully')
+  console.info('Redis connected successfully')
 })
 
 // Cache TTL constants (in seconds)

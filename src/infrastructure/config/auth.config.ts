@@ -14,10 +14,13 @@ import {
   sendVerificationEmail
 } from './mail.config'
 
-// Initialize Stripe client
-const stripeClient = new Stripe(env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-24.acacia'
-})
+// Initialize Stripe client only if API key is provided
+const hasStripeKey = !!env.STRIPE_SECRET_KEY
+const stripeClient = hasStripeKey
+  ? new Stripe(env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-02-24.acacia'
+    })
+  : (null as any)
 
 // Stripe subscription plans configuration
 const stripePlans = [
@@ -66,32 +69,38 @@ const stripePlans = [
 ]
 
 // Use 'as any' to bypass complex type inference issues with the stripe plugin
-export const auth: any = betterAuth({
-  plugins: [
-    openAPI(),
-    emailOTP({
-      expiresIn: 300,
-      otpLength: 6,
-      async sendVerificationOTP({ email, otp }) {
-        const template = await emailTemplates.otpLogin(otp)
-        await sendEmail({
-          to: email,
-          ...template
+const authPlugins = [
+  openAPI(),
+  emailOTP({
+    expiresIn: 300,
+    otpLength: 6,
+    async sendVerificationOTP({ email, otp }) {
+      const template = await emailTemplates.otpLogin(otp)
+      await sendEmail({
+        to: email,
+        ...template
+      })
+    }
+  }),
+  adminPlugin(),
+  ...(hasStripeKey
+    ? [
+        stripePlugin({
+          stripeClient: stripeClient as any,
+          stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
+          createCustomerOnSignUp: true,
+          subscription: {
+            enabled: true,
+            trialPeriodDays: 14,
+            plans: stripePlans
+          }
         })
-      }
-    }),
-    adminPlugin(),
-    stripePlugin({
-      stripeClient,
-      stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
-      createCustomerOnSignUp: true,
-      subscription: {
-        enabled: true,
-        trialPeriodDays: 14,
-        plans: stripePlans
-      }
-    })
-  ],
+      ]
+    : [])
+]
+
+export const auth: any = betterAuth({
+  plugins: authPlugins,
   socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID || '',

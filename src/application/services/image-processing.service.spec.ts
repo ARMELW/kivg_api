@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ImageProcessingService } from './image-processing.service'

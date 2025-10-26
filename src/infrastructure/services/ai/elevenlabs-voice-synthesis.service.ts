@@ -49,7 +49,7 @@ export class ElevenLabsVoiceSynthesis implements AIVoiceSynthesis {
       // Convert stream to buffer
       const chunks: Uint8Array[] = []
       const reader = audioStream.getReader()
-      
+
       try {
         while (true) {
           const { done, value } = await reader.read()
@@ -59,7 +59,7 @@ export class ElevenLabsVoiceSynthesis implements AIVoiceSynthesis {
       } finally {
         reader.releaseLock()
       }
-      
+
       const audioBuffer = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)))
 
       // Upload the audio file

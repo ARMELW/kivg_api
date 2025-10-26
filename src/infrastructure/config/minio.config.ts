@@ -30,7 +30,7 @@ export async function initializeMinIOBuckets(): Promise<void> {
       const exists = await minioClient.bucketExists(bucket)
       if (!exists) {
         await minioClient.makeBucket(bucket, 'us-east-1')
-        console.log(`MinIO bucket created: ${bucket}`)
+        console.info(`MinIO bucket created: ${bucket}`)
 
         // Set bucket policy for public read access for exports
         if (bucket === MINIO_BUCKETS.EXPORTS) {
@@ -49,7 +49,7 @@ export async function initializeMinIOBuckets(): Promise<void> {
         }
       }
     }
-    console.log('MinIO buckets initialized successfully')
+    console.info('MinIO buckets initialized successfully')
   } catch (error) {
     console.error('Error initializing MinIO buckets:', error)
   }

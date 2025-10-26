@@ -1,3 +1,5 @@
+import type { AIServiceProvider } from './ai-service.interface'
+
 /**
  * AI Music Generator Interface
  */

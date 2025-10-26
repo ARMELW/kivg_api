@@ -109,8 +109,6 @@ export class MetricsService {
       const targetDate = date || new Date().toISOString().split('T')[0]
 
       // Count total 2xx/3xx responses
-      const successKey = `metrics:status:${targetDate}:2*`
-      const errorKey = `metrics:status:${targetDate}:*`
 
       // This is simplified - in production you'd query all status codes
       const errors = (await this.cacheService.get<number>(`metrics:status:${targetDate}:500`)) || 0

@@ -122,7 +122,7 @@ export class TemplateController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -173,7 +173,7 @@ export class TemplateController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -220,7 +220,7 @@ export class TemplateController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -325,7 +325,7 @@ export class TemplateController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {

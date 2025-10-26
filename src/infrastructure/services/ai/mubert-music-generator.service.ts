@@ -122,9 +122,11 @@ export class MubertMusicGenerator implements AIMusicGenerator {
     }
 
     // Add tags
-    tags.push(...(moodTags[mood] || ['neutral']))
-    tags.push(...(genreTags[genre] || ['background']))
-    tags.push(...(tempoTags[tempo] || ['medium']))
+    tags.push(
+      ...(moodTags[mood] || ['neutral']),
+      ...(genreTags[genre] || ['background']),
+      ...(tempoTags[tempo] || ['medium'])
+    )
 
     return tags
   }

@@ -1,3 +1,4 @@
+import process from 'node:process'
 import type { SubscriptionPlan } from '@/domain/types/subscription.type'
 
 export const pricingData: SubscriptionPlan[] = [

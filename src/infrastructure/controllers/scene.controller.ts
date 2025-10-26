@@ -116,7 +116,7 @@ export class SceneController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -167,7 +167,7 @@ export class SceneController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -275,7 +275,7 @@ export class SceneController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -331,14 +331,14 @@ export class SceneController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
             return c.json({ success: false, error: 'Unauthorized' }, 401)
           }
 
-          const body = await c.req.json()
+          //const body = await c.req.json()
 
           return c.json({
             success: true,
@@ -377,7 +377,7 @@ export class SceneController implements Routes {
           }
         }
       }),
-      async (c: any) => {
+      (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {

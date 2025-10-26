@@ -18,4 +18,4 @@ export const Font = z.object({
   updatedAt: z.date()
 })
 
-export type Font = z.infer<typeof Font>
+export type FontType = z.infer<typeof Font>
