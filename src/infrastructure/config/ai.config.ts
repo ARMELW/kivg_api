@@ -1,4 +1,5 @@
 import { env } from 'node:process'
+import { AutoContentScriptGenerator } from '../services/ai/autocontent-script-generator.service'
 import { DalleImageGenerator } from '../services/ai/dalle-image-generator.service'
 import { ElevenLabsVoiceSynthesis } from '../services/ai/elevenlabs-voice-synthesis.service'
 import { GeminiImageGenerator } from '../services/ai/gemini-image-generator.service'
@@ -17,6 +18,7 @@ export const ELEVENLABS_API_KEY = env.ELEVENLABS_API_KEY || ''
 export const OPENAI_API_KEY = env.OPENAI_API_KEY || ''
 export const MINIMAX_API_KEY = env.MINIMAX_API_KEY || ''
 export const MUBERT_API_KEY = env.MUBERT_API_KEY || ''
+export const AUTOCONTENT_API_KEY = env.AUTOCONTENT_API_KEY || ''
 
 // Initialize Image Generation Services (multiple providers)
 export const geminiImageGenerator = GEMINI_API_KEY ? new GeminiImageGenerator(GEMINI_API_KEY) : null
@@ -25,8 +27,14 @@ export const dalleImageGenerator = OPENAI_API_KEY ? new DalleImageGenerator(OPEN
 // Primary image generator (prefer DALL-E for direct generation, fallback to Gemini for prompts)
 export const imageGenerator = dalleImageGenerator || geminiImageGenerator
 
-// Initialize Script Generation Service
-export const scriptGenerator = GEMINI_API_KEY ? new GeminiScriptGenerator(GEMINI_API_KEY) : null
+// Initialize Script Generation Services (multiple providers)
+export const autoContentScriptGenerator = AUTOCONTENT_API_KEY
+  ? new AutoContentScriptGenerator(AUTOCONTENT_API_KEY)
+  : null
+export const geminiScriptGenerator = GEMINI_API_KEY ? new GeminiScriptGenerator(GEMINI_API_KEY) : null
+
+// Primary script generator (prefer AutoContentAPI, fallback to Gemini)
+export const scriptGenerator = autoContentScriptGenerator || geminiScriptGenerator
 
 // Initialize Voice Synthesis Services (multiple providers)
 export const elevenLabsVoice = ELEVENLABS_API_KEY ? new ElevenLabsVoiceSynthesis(ELEVENLABS_API_KEY) : null
@@ -63,7 +71,10 @@ export const getAIProviders = () => {
       elevenLabsVoice?.isAvailable() && 'elevenlabs',
       minimaxVoice?.isAvailable() && 'minimax'
     ].filter(Boolean),
-    scriptProviders: [scriptGenerator?.isAvailable() && 'gemini'].filter(Boolean),
+    scriptProviders: [
+      autoContentScriptGenerator?.isAvailable() && 'autocontent',
+      geminiScriptGenerator?.isAvailable() && 'gemini'
+    ].filter(Boolean),
     musicProviders: [musicGenerator?.isAvailable() && 'mubert'].filter(Boolean)
   }
 }

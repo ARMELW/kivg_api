@@ -9,12 +9,21 @@ import {
   scriptGenerator,
   voiceSynthesis
 } from '../config/ai.config'
+import { TrackAIGenerationUseCase } from '@/application/use-cases/ai-usage/track-ai-generation.use-case'
+import { AIUsageRepository } from '../repositories/ai-usage.repository'
+import { StripeUsageBillingService } from '@/application/services/stripe-usage-billing.service'
 
 export class AIController implements Routes {
   public controller: OpenAPIHono
+  private aiUsageRepository: AIUsageRepository
+  private trackAIGenerationUseCase: TrackAIGenerationUseCase
+  private stripeUsageBillingService: StripeUsageBillingService
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.aiUsageRepository = new AIUsageRepository()
+    this.trackAIGenerationUseCase = new TrackAIGenerationUseCase(this.aiUsageRepository)
+    this.stripeUsageBillingService = new StripeUsageBillingService(this.aiUsageRepository)
   }
 
   public initRoutes() {
@@ -119,10 +128,19 @@ export class AIController implements Routes {
           return c.json({ success: false, error: 'Image generator not configured' }, 400)
         }
 
+        const user = c.get('user')
         const { prompt, style } = await c.req.json()
         const result = await imageGenerator.generateImage({ prompt, style })
 
         if (result.success) {
+          // Track usage if user is authenticated
+          if (user) {
+            await this.trackAIGenerationUseCase.execute({
+              userId: user.id,
+              type: 'image'
+            })
+          }
+
           // DALL-E returns actual image URL, Gemini returns enhanced prompt
           const isDalle = imageGenerator.name === 'dalle'
           return c.json({
@@ -210,10 +228,19 @@ export class AIController implements Routes {
           )
         }
 
+        const user = c.get('user')
         const params = await c.req.json()
         const result = await imageGenerator.generateImage(params)
 
         if (result.success) {
+          // Track usage if user is authenticated
+          if (user) {
+            await this.trackAIGenerationUseCase.execute({
+              userId: user.id,
+              type: 'image'
+            })
+          }
+
           return c.json({
             success: true,
             data: {
@@ -290,10 +317,21 @@ export class AIController implements Routes {
           return c.json({ success: false, error: 'Script generator not configured' }, 400)
         }
 
+        // Check authentication for usage tracking
+        const user = c.get('user')
+        
         const params = await c.req.json()
         const result = await scriptGenerator.generateScript(params)
 
         if (result.success) {
+          // Track usage if user is authenticated
+          if (user) {
+            await this.trackAIGenerationUseCase.execute({
+              userId: user.id,
+              type: 'script'
+            })
+          }
+
           return c.json({
             success: true,
             data: {
@@ -442,11 +480,21 @@ export class AIController implements Routes {
           )
         }
 
+        const user = c.get('user')
+
         try {
           const params = await c.req.json()
           const result = await voiceSynthesis.generateVoice(params)
 
           if (result.success) {
+            // Track usage if user is authenticated
+            if (user) {
+              await this.trackAIGenerationUseCase.execute({
+                userId: user.id,
+                type: 'voice'
+              })
+            }
+
             return c.json({
               success: true,
               data: {
@@ -545,11 +593,21 @@ export class AIController implements Routes {
           )
         }
 
+        const user = c.get('user')
+
         try {
           const params = await c.req.json()
           const result = await musicGenerator.generateMusic(params)
 
           if (result.success) {
+            // Track usage if user is authenticated
+            if (user) {
+              await this.trackAIGenerationUseCase.execute({
+                userId: user.id,
+                type: 'music'
+              })
+            }
+
             return c.json({
               success: true,
               data: {

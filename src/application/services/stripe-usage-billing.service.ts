@@ -1,0 +1,187 @@
+import Stripe from 'stripe'
+import { env } from 'node:process'
+import type { AIUsageRepositoryInterface } from '@/domain/repositories/ai-usage.repository.interface'
+import { getFeatureLimit, getPlanById } from '@/infrastructure/config/subscription.config'
+
+/**
+ * Stripe Usage Billing Service
+ * Handles pay-per-use billing for AI features
+ */
+export class StripeUsageBillingService {
+  private stripe: Stripe
+  private aiUsageRepository: AIUsageRepositoryInterface
+
+  // Overage pricing per video (in EUR)
+  private readonly overagePricing = {
+    pro: 1.5, // €1.50 per video
+    pro_plus: 1.0, // €1.00 per video
+    enterprise: 0.75 // €0.75 per video
+  }
+
+  constructor(aiUsageRepository: AIUsageRepositoryInterface) {
+    if (!env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is required for usage billing')
+    }
+    this.stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-02-24.acacia'
+    })
+    this.aiUsageRepository = aiUsageRepository
+  }
+
+  /**
+   * Check if user has exceeded their plan limit
+   */
+  async checkUsageLimit(userId: string, subscriptionPlan: string): Promise<{
+    exceeded: boolean
+    currentUsage: number
+    limit: number
+    overage: number
+  }> {
+    const usage = await this.aiUsageRepository.getCurrentMonthUsage(userId)
+    const currentUsage = usage?.videoGenerationCount || 0
+
+    const plan = getPlanById(subscriptionPlan)
+    const limit = plan?.features?.aiVideoLimit || 0
+
+    // -1 means unlimited
+    if (limit === -1) {
+      return {
+        exceeded: false,
+        currentUsage,
+        limit: -1,
+        overage: 0
+      }
+    }
+
+    const exceeded = currentUsage >= limit
+    const overage = Math.max(0, currentUsage - limit)
+
+    return {
+      exceeded,
+      currentUsage,
+      limit,
+      overage
+    }
+  }
+
+  /**
+   * Calculate overage cost for current month
+   */
+  async calculateOverageCost(userId: string, subscriptionPlan: string): Promise<number> {
+    const { overage } = await this.checkUsageLimit(userId, subscriptionPlan)
+
+    if (overage === 0) {
+      return 0
+    }
+
+    const pricePerVideo = this.overagePricing[subscriptionPlan as keyof typeof this.overagePricing] || 1.0
+
+    return overage * pricePerVideo
+  }
+
+  /**
+   * Report usage to Stripe for billing
+   * This should be called at the end of each billing period or when usage is tracked
+   */
+  async reportUsageToStripe(
+    userId: string,
+    subscriptionItemId: string,
+    subscriptionPlan: string
+  ): Promise<{
+    success: boolean
+    error?: string
+  }> {
+    try {
+      const { overage } = await this.checkUsageLimit(userId, subscriptionPlan)
+
+      if (overage === 0) {
+        return { success: true }
+      }
+
+      // Report usage record to Stripe
+      await this.stripe.subscriptionItems.createUsageRecord(subscriptionItemId, {
+        quantity: overage,
+        timestamp: Math.floor(Date.now() / 1000),
+        action: 'set' // Use 'set' to replace the previous value
+      })
+
+      return { success: true }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to report usage to Stripe'
+      }
+    }
+  }
+
+  /**
+   * Create a metered price for overage billing
+   * This should be run once during setup
+   */
+  async createMeteredPrice(planId: string): Promise<{
+    success: boolean
+    priceId?: string
+    error?: string
+  }> {
+    try {
+      const pricePerVideo = this.overagePricing[planId as keyof typeof this.overagePricing]
+
+      if (!pricePerVideo) {
+        return {
+          success: false,
+          error: `No overage pricing defined for plan: ${planId}`
+        }
+      }
+
+      // Create or get product for AI video generation
+      let product = await this.stripe.products
+        .list({ active: true })
+        .then((products) => products.data.find((p) => p.name === `AI Video Overage - ${planId.toUpperCase()}`))
+
+      if (!product) {
+        product = await this.stripe.products.create({
+          name: `AI Video Overage - ${planId.toUpperCase()}`,
+          description: `Pay-per-use pricing for AI video generation beyond plan limit`,
+          metadata: {
+            plan: planId,
+            type: 'overage'
+          }
+        })
+      }
+
+      // Create metered price
+      const price = await this.stripe.prices.create({
+        product: product.id,
+        currency: 'eur',
+        unit_amount: Math.round(pricePerVideo * 100), // Convert to cents
+        recurring: {
+          interval: 'month',
+          usage_type: 'metered',
+          aggregate_usage: 'sum'
+        },
+        billing_scheme: 'per_unit',
+        metadata: {
+          plan: planId,
+          type: 'ai_video_overage'
+        }
+      })
+
+      return {
+        success: true,
+        priceId: price.id
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to create metered price'
+      }
+    }
+  }
+
+  /**
+   * Get overage pricing information
+   */
+  getOveragePricing(planId: string): number {
+    return this.overagePricing[planId as keyof typeof this.overagePricing] || 1.0
+  }
+}

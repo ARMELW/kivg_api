@@ -38,14 +38,14 @@ export class DalleImageGenerator implements AIImageGenerator {
         response_format: 'url'
       })
 
-      const imageUrl = response.data[0]?.url
-
-      if (!imageUrl) {
+      if (!response.data || response.data.length === 0 || !response.data[0]?.url) {
         return {
           success: false,
           error: 'No image URL returned from DALL-E'
         }
       }
+
+      const imageUrl = response.data[0].url
 
       return {
         success: true,
