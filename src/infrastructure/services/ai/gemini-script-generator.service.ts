@@ -2,8 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import type {
   AIScriptGenerator,
   AIScriptGeneratorParams,
-  AIScriptGeneratorResponse,
-  ScriptScene
+  AIScriptGeneratorResponse
 } from '@/domain/interfaces/ai-service.interface'
 
 /**
