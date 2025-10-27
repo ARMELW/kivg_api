@@ -44,7 +44,11 @@ const authPlugins = [
         stripePlugin({
           stripeClient: stripeClient as any,
           stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
-          createCustomerOnSignUp: true
+          createCustomerOnSignUp: true,
+          subscription: {
+            enabled: true,
+            plans: () => []
+          }
         })
       ]
     : [])
@@ -65,8 +69,8 @@ const authPlugins = [
 export const auth: any = betterAuth({
   plugins: authPlugins,
   database: drizzleAdapter(db, {
-    provider: 'pg',
-    usePlural: true
+    provider: 'pg'
+    //  usePlural: true
   }),
   baseURL: env.BETTER_AUTH || 'http://localhost:3000',
   trustedOrigins: [env.BETTER_AUTH || 'http://localhost:3000', env.REACT_APP_URL || 'http://localhost:5173'],

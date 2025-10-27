@@ -6,11 +6,11 @@ import { GetAllPlansUseCase } from '@/application/use-cases/plan/get-all-plans.u
 import { GetPlanByIdUseCase } from '@/application/use-cases/plan/get-plan-by-id.use-case'
 import { UpdatePlanUseCase } from '@/application/use-cases/plan/update-plan.use-case'
 import { CreatePlanSchema, PlanSchema, UpdatePlanSchema } from '@/domain/models/plan.model'
-import type { Routes } from '@/domain/types/route.type'
 import { ErrorCode } from '@/domain/types/error.type'
 import { authMiddleware } from '@/infrastructure/middlewares/auth.middleware'
 import { roleMiddleware } from '@/infrastructure/middlewares/permission.middleware'
 import { PlanRepository } from '@/infrastructure/repositories/plan.repository'
+import type { Routes } from '@/domain/types/route.type'
 
 /**
  * Helper function to map error codes to HTTP status codes

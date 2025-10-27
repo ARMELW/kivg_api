@@ -1,5 +1,5 @@
-import { and, eq, or } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
+import { and, eq, or } from 'drizzle-orm'
 import type { CreatePlanDTO, Plan, UpdatePlanDTO } from '@/domain/models/plan.model'
 import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
 import { db } from '../database/db'
@@ -39,7 +39,11 @@ export class PlanRepository implements PlanRepositoryInterface {
     let results
     if (conditions.length > 0) {
       // Use and() to combine conditions - plans must match ALL criteria
-      results = await db.select().from(plans).where(and(...conditions)).orderBy(plans.sortOrder, plans.createdAt)
+      results = await db
+        .select()
+        .from(plans)
+        .where(and(...conditions))
+        .orderBy(plans.sortOrder, plans.createdAt)
     } else {
       results = await db.select().from(plans).orderBy(plans.sortOrder, plans.createdAt)
     }

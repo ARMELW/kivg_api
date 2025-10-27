@@ -1,7 +1,7 @@
-import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
 import { ErrorCode } from '@/domain/types/error.type'
 import { IUseCase } from '@/domain/types/use-case.type'
 import { ActivityType } from '@/infrastructure/config/activity.config'
+import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
 
 type Params = {
   id: string

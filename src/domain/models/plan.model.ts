@@ -16,9 +16,7 @@ export const PlanFeaturesSchema = z.object({
   hasAIMusic: z.boolean().default(false),
   aiVideoLimit: z.number().default(0), // -1 for unlimited
   maxCollaborators: z.number().default(0), // -1 for unlimited
-  supportLevel: z
-    .enum(['forum', 'email_48h', 'priority_24h', 'priority_12h', 'premium_4h'])
-    .default('forum'),
+  supportLevel: z.enum(['forum', 'email_48h', 'priority_24h', 'priority_12h', 'premium_4h']).default('forum'),
   hasTemplates: z.boolean().default(false),
   hasBranding: z.boolean().default(false),
   hasAPI: z.boolean().default(false),

@@ -1,7 +1,7 @@
-import type { Plan } from '@/domain/models/plan.model'
-import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
 import { IUseCase } from '@/domain/types/use-case.type'
 import { ActivityType } from '@/infrastructure/config/activity.config'
+import type { Plan } from '@/domain/models/plan.model'
+import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
 
 type Params = {
   filters?: {

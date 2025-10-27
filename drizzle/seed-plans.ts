@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
+import process from 'node:process'
+import { pricingData } from '../src/infrastructure/config/subscription.config'
 import { db } from '../src/infrastructure/database/db'
 import { plans } from '../src/infrastructure/database/schema/schema'
-import { pricingData } from '../src/infrastructure/config/subscription.config'
 
 async function seedPlans() {
   console.log('🌱 Seeding plans...')

@@ -137,8 +137,10 @@ export class StripeUsageBillingService {
     // Until the Meter API is implemented, this method creates a licensed price instead.
     // This means billing will NOT be based on actual usage.
     // See: https://docs.stripe.com/billing/subscriptions/usage-based/recording-usage-api
-    console.warn('createMeteredPrice: Metered billing not supported in Stripe v19 without Meter API. Creating licensed price instead.')
-    
+    console.warn(
+      'createMeteredPrice: Metered billing not supported in Stripe v19 without Meter API. Creating licensed price instead.'
+    )
+
     try {
       // Skip if Stripe is not configured
       if (!env.STRIPE_SECRET_KEY) {
