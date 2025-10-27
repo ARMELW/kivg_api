@@ -14,6 +14,15 @@ export const users = pgTable('users', {
   banReason: text('ban_reason'),
   banExpires: timestamp('ban_expires'),
   isAdmin: boolean('is_admin').notNull().default(false),
+  // Stripe trial and subscription fields (created in migration 0000, added to schema for Better Auth compatibility)
+  isTrialActive: boolean('is_trial_active').notNull().default(false),
+  hasUsedTrial: boolean('has_used_trial').notNull().default(false),
+  trialStartDate: timestamp('trial_start_date'),
+  trialEndDate: timestamp('trial_end_date'),
+  stripeCustomerId: text('stripe_customer_id').unique(),
+  stripeSubscriptionId: text('stripe_subscription_id').unique(),
+  stripePriceId: text('stripe_price_id'),
+  stripeCurrentPeriodEnd: timestamp('stripe_current_period_end'),
   subscriptionPlan: text('subscription_plan').notNull().default('free'),
   // API access control
   hasApiAccess: boolean('has_api_access').notNull().default(false),
