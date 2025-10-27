@@ -158,6 +158,54 @@ export class StripePlanSyncService {
   }
 
   /**
+   * Archive a plan's Stripe product (called when deleting a plan)
+   * Sets the product and its prices to inactive in Stripe
+   */
+  async archivePlanInStripe(plan: Plan): Promise<{
+    success: boolean
+    error?: string
+  }> {
+    if (!this.stripe) {
+      return {
+        success: false,
+        error: 'Stripe is not configured'
+      }
+    }
+
+    try {
+      // Archive the Stripe product if it exists
+      if (plan.stripeProductId) {
+        await this.stripe.products.update(plan.stripeProductId, {
+          active: false
+        })
+      }
+
+      // Deactivate monthly price if it exists
+      if (plan.stripePriceIdMonthly) {
+        await this.stripe.prices.update(plan.stripePriceIdMonthly, {
+          active: false
+        })
+      }
+
+      // Deactivate yearly price if it exists
+      if (plan.stripePriceIdYearly) {
+        await this.stripe.prices.update(plan.stripePriceIdYearly, {
+          active: false
+        })
+      }
+
+      return {
+        success: true
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Failed to archive plan in Stripe'
+      }
+    }
+  }
+
+  /**
    * Sync all plans to Stripe
    */
   async syncAllPlansToStripe(): Promise<{

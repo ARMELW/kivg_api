@@ -1,8 +1,9 @@
+import type { StripePlanSyncService } from '@/application/services/stripe-plan-sync.service'
+import type { CreatePlanDTO, Plan } from '@/domain/models/plan.model'
+import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
 import { ErrorCode } from '@/domain/types/error.type'
 import { IUseCase } from '@/domain/types/use-case.type'
 import { ActivityType } from '@/infrastructure/config/activity.config'
-import type { CreatePlanDTO, Plan } from '@/domain/models/plan.model'
-import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
 
 type Params = CreatePlanDTO
 
@@ -14,7 +15,10 @@ type Response = {
 }
 
 export class CreatePlanUseCase extends IUseCase<Params, Response> {
-  constructor(private readonly planRepository: PlanRepositoryInterface) {
+  constructor(
+    private readonly planRepository: PlanRepositoryInterface,
+    private readonly stripePlanSyncService?: StripePlanSyncService
+  ) {
     super()
   }
 
@@ -33,6 +37,15 @@ export class CreatePlanUseCase extends IUseCase<Params, Response> {
 
       // Create the plan
       const plan = await this.planRepository.create(params)
+
+      // Automatically sync with Stripe if service is available
+      if (this.stripePlanSyncService && (params.pricing.monthly > 0 || params.pricing.yearly > 0)) {
+        const syncResult = await this.stripePlanSyncService.syncPlanToStripe(plan)
+        if (!syncResult.success) {
+          // Log warning but don't fail the plan creation
+          console.warn(`Failed to sync plan ${plan.id} to Stripe: ${syncResult.error}`)
+        }
+      }
 
       return {
         data: plan,
