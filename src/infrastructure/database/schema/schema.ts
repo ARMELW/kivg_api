@@ -426,3 +426,53 @@ export const userApiKeys = pgTable('user_api_keys', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 })
+
+// Plans table - manages subscription plans
+export const plans = pgTable('plans', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  description: text('description'),
+  isActive: boolean('is_active').notNull().default(true),
+  isPublic: boolean('is_public').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  // Pricing (stored in cents)
+  priceMonthly: integer('price_monthly').notNull().default(0),
+  priceYearly: integer('price_yearly').notNull().default(0),
+  // Features as JSONB for flexibility
+  features: jsonb('features')
+    .$type<{
+      maxScenes: number
+      maxDuration: number
+      exportQuality: '720p' | '1080p' | '4k'
+      hasWatermark: boolean
+      storageType: 'local' | 'cloud'
+      cloudProjectsLimit: number
+      maxAudioTracks: number
+      assetsLibrarySize: number
+      customFonts: number
+      hasAIVoice: boolean
+      hasAIScriptGenerator: boolean
+      hasAIImageGenerator?: boolean
+      hasAIMusic?: boolean
+      aiVideoLimit?: number
+      maxCollaborators: number
+      supportLevel: 'forum' | 'email_48h' | 'priority_24h' | 'priority_12h' | 'premium_4h'
+      hasTemplates: boolean
+      hasBranding: boolean
+      hasAPI: boolean
+      hasSSO?: boolean
+      hasDedicatedSupport?: boolean
+      hasCustomBranding?: boolean
+      hasSLA?: boolean
+    }>()
+    .notNull(),
+  // Stripe Integration
+  stripeProductId: text('stripe_product_id'),
+  stripePriceIdMonthly: text('stripe_price_id_monthly'),
+  stripePriceIdYearly: text('stripe_price_id_yearly'),
+  // Additional metadata
+  metadata: jsonb('metadata').$type<Record<string, any>>(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})

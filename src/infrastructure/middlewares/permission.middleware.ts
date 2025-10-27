@@ -41,3 +41,36 @@ export function checkPermission(subject: Subject, action: Action) {
     }
   }
 }
+
+/**
+ * Middleware to check if user has one of the specified roles
+ */
+export function roleMiddleware(allowedRoles: string[]) {
+  return async (c: Context, next: Next) => {
+    const user = c.get('user') as any
+
+    if (!user) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401)
+    }
+
+    // Check if user has admin flag or one of the allowed roles
+    const hasRole =
+      user.isAdmin ||
+      user.role === 'super_admin' ||
+      allowedRoles.includes(user.role) ||
+      allowedRoles.includes('admin')
+
+    if (!hasRole) {
+      return c.json(
+        {
+          success: false,
+          error: 'Insufficient permissions. Admin access required.'
+        },
+        403
+      )
+    }
+
+    return next()
+  }
+}
+

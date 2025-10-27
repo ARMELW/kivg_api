@@ -1,5 +1,6 @@
 export * from './permission.controller'
 export * from './pricing.controller'
+export * from './plan.controller'
 export * from './user.controller'
 export * from './user-api-keys.controller'
 export * from './asset.controller'
