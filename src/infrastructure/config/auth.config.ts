@@ -1,8 +1,10 @@
 import { env } from 'node:process'
+import { stripe as stripePlugin } from '@better-auth/stripe'
 import { betterAuth, type User } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin as adminPlugin, emailOTP, openAPI } from 'better-auth/plugins'
 import { Hono } from 'hono'
+import Stripe from 'stripe'
 import { db } from '../database/db'
 import {
   emailTemplates,
@@ -13,19 +15,15 @@ import {
 } from './mail.config'
 
 // Initialize Stripe client only if API key is provided
-// Disabled for debugging
-// const stripeSecretKey = env.STRIPE_SECRET_KEY ?? ''
-// const hasStripeKey = stripeSecretKey.length > 0
-// const stripeClient = hasStripeKey
-//   ? new Stripe(stripeSecretKey, {
-//       apiVersion: '2025-02-24.acacia'
-//     })
-//   : (null as any)
+const stripeSecretKey = env.STRIPE_SECRET_KEY ?? ''
+const hasStripeKey = stripeSecretKey.length > 0
+const stripeClient = hasStripeKey
+  ? new Stripe(stripeSecretKey, {
+      apiVersion: '2025-09-30.clover'
+    })
+  : (null as any)
 
-// Stripe subscription plans configuration - disabled
-// const stripePlans = []
-
-// Use 'as any' to bypass complex type inference issues with the stripe plugin
+// Build auth plugins array conditionally
 const authPlugins = [
   openAPI(),
   emailOTP({
@@ -39,22 +37,17 @@ const authPlugins = [
       })
     }
   }),
-  adminPlugin()
-  // Stripe plugin temporarily disabled - causes user creation query issues
-  // ...(hasStripeKey
-  //   ? [
-  //       stripePlugin({
-  //         stripeClient: stripeClient as any,
-  //         stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
-  //         createCustomerOnSignUp: true,
-  //         subscription: {
-  //           enabled: true,
-  //           trialPeriodDays: 14,
-  //           plans: stripePlans
-  //         }
-  //       })
-  //     ]
-  //   : [])
+  adminPlugin(),
+  // Add Stripe plugin only if Stripe key is configured
+  ...(hasStripeKey
+    ? [
+        stripePlugin({
+          stripeClient: stripeClient as any,
+          stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
+          createCustomerOnSignUp: true
+        })
+      ]
+    : [])
 ]
 
 /**socialProviders: {

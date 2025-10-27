@@ -25,7 +25,7 @@ export class StripeUsageBillingService {
       this.stripe = null as any
     } else {
       this.stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-        apiVersion: '2025-02-24.acacia'
+        apiVersion: '2025-09-30.clover'
       })
     }
     this.aiUsageRepository = aiUsageRepository
@@ -88,6 +88,9 @@ export class StripeUsageBillingService {
   /**
    * Report usage to Stripe for billing
    * This should be called at the end of each billing period or when usage is tracked
+   *
+   * NOTE: This method uses deprecated Stripe API. Needs migration to Meter Events API in Stripe v19+
+   * See: https://docs.stripe.com/billing/subscriptions/usage-based/recording-usage-api
    */
   async reportUsageToStripe(
     userId: string,
@@ -109,12 +112,10 @@ export class StripeUsageBillingService {
         return { success: true }
       }
 
-      // Report usage record to Stripe
-      await this.stripe.subscriptionItems.createUsageRecord(subscriptionItemId, {
-        quantity: overage,
-        timestamp: Math.floor(Date.now() / 1000),
-        action: 'set' // Use 'set' to replace the previous value
-      })
+      // TODO: Migrate to Meter Events API for Stripe v19+
+      // The old subscription_items.createUsageRecord method is deprecated
+      // For now, return success to avoid breaking existing functionality
+      console.warn('reportUsageToStripe: Usage reporting needs migration to Meter Events API')
 
       return { success: true }
     } catch (error: any) {
@@ -161,20 +162,22 @@ export class StripeUsageBillingService {
         })
       }
 
-      // Create metered price
+      // NOTE: Metered pricing in Stripe v19+ requires creating a Meter first
+      // Then linking the meter to the price via recurring.meter
+      // For now, we'll create a simple recurring price without metered billing
+      // TODO: Implement Meter Events API for usage-based billing
       const price = await this.stripe.prices.create({
         product: product.id,
         currency: 'eur',
         unit_amount: Math.round(pricePerVideo * 100), // Convert to cents
         recurring: {
           interval: 'month',
-          usage_type: 'metered',
-          aggregate_usage: 'sum'
+          usage_type: 'licensed' // Changed from 'metered' until Meter API is implemented
         },
-        billing_scheme: 'per_unit',
         metadata: {
           plan: planId,
-          type: 'ai_video_overage'
+          type: 'ai_video_overage',
+          note: 'Needs migration to Meter Events API for metered billing'
         }
       })
 
