@@ -265,7 +265,7 @@ export class PlanController implements Routes {
       }),
       async (c: any) => {
         const body = await c.req.json()
-        const createPlanUseCase = new CreatePlanUseCase(this.planRepository)
+        const createPlanUseCase = new CreatePlanUseCase(this.planRepository, this.stripePlanSyncService)
         const result = await createPlanUseCase.execute(body)
 
         if (result.success) {
@@ -346,7 +346,7 @@ export class PlanController implements Routes {
       async (c: any) => {
         const { id } = c.req.param()
         const body = await c.req.json()
-        const updatePlanUseCase = new UpdatePlanUseCase(this.planRepository)
+        const updatePlanUseCase = new UpdatePlanUseCase(this.planRepository, this.stripePlanSyncService)
         const result = await updatePlanUseCase.execute({ id, data: body })
 
         if (result.success) {
@@ -419,7 +419,7 @@ export class PlanController implements Routes {
       }),
       async (c: any) => {
         const { id } = c.req.param()
-        const deletePlanUseCase = new DeletePlanUseCase(this.planRepository)
+        const deletePlanUseCase = new DeletePlanUseCase(this.planRepository, this.stripePlanSyncService)
         const result = await deletePlanUseCase.execute({ id })
 
         if (result.success) {

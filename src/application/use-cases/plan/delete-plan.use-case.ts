@@ -1,6 +1,7 @@
 import { ErrorCode } from '@/domain/types/error.type'
 import { IUseCase } from '@/domain/types/use-case.type'
 import { ActivityType } from '@/infrastructure/config/activity.config'
+import type { StripePlanSyncService } from '@/application/services/stripe-plan-sync.service'
 import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
 
 type Params = {
@@ -14,7 +15,10 @@ type Response = {
 }
 
 export class DeletePlanUseCase extends IUseCase<Params, Response> {
-  constructor(private readonly planRepository: PlanRepositoryInterface) {
+  constructor(
+    private readonly planRepository: PlanRepositoryInterface,
+    private readonly stripePlanSyncService?: StripePlanSyncService
+  ) {
     super()
   }
 
@@ -27,6 +31,15 @@ export class DeletePlanUseCase extends IUseCase<Params, Response> {
           success: false,
           error: 'Plan not found',
           errorCode: ErrorCode.NOT_FOUND
+        }
+      }
+
+      // Archive the plan in Stripe before soft deleting locally
+      if (this.stripePlanSyncService && existingPlan.stripeProductId) {
+        const archiveResult = await this.stripePlanSyncService.archivePlanInStripe(existingPlan)
+        if (!archiveResult.success) {
+          // Log warning but don't fail the plan deletion
+          console.warn(`Failed to archive plan ${existingPlan.id} in Stripe: ${archiveResult.error}`)
         }
       }
 

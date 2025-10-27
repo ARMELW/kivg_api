@@ -1,6 +1,7 @@
 import { ErrorCode } from '@/domain/types/error.type'
 import { IUseCase } from '@/domain/types/use-case.type'
 import { ActivityType } from '@/infrastructure/config/activity.config'
+import type { StripePlanSyncService } from '@/application/services/stripe-plan-sync.service'
 import type { Plan, UpdatePlanDTO } from '@/domain/models/plan.model'
 import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
 
@@ -17,7 +18,10 @@ type Response = {
 }
 
 export class UpdatePlanUseCase extends IUseCase<Params, Response> {
-  constructor(private readonly planRepository: PlanRepositoryInterface) {
+  constructor(
+    private readonly planRepository: PlanRepositoryInterface,
+    private readonly stripePlanSyncService?: StripePlanSyncService
+  ) {
     super()
   }
 
@@ -49,6 +53,15 @@ export class UpdatePlanUseCase extends IUseCase<Params, Response> {
 
       // Update the plan
       const plan = await this.planRepository.update(params.id, params.data)
+
+      // Automatically sync with Stripe if service is available and plan has pricing
+      if (this.stripePlanSyncService && (plan.pricing.monthly > 0 || plan.pricing.yearly > 0)) {
+        const syncResult = await this.stripePlanSyncService.syncPlanToStripe(plan)
+        if (!syncResult.success) {
+          // Log warning but don't fail the plan update
+          console.warn(`Failed to sync plan ${plan.id} to Stripe: ${syncResult.error}`)
+        }
+      }
 
       return {
         data: plan,
