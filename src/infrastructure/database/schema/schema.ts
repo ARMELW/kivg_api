@@ -15,6 +15,7 @@ export const users = pgTable('users', {
   banExpires: timestamp('ban_expires'),
   isAdmin: boolean('is_admin').notNull().default(false),
   subscriptionPlan: text('subscription_plan').notNull().default('free'),
+  stripeCustomerId: text('stripe_customer_id'), // Better Auth Stripe plugin
   // API access control
   hasApiAccess: boolean('has_api_access').notNull().default(false),
   useOwnApiKeys: boolean('use_own_api_keys').notNull().default(false),
@@ -85,6 +86,24 @@ export const subscriptionHistory = pgTable('subscription_history', {
   currency: text('currency'),
   status: text('status').notNull(),
   timestamp: timestamp('timestamp').notNull().defaultNow()
+})
+
+// Better Auth Stripe plugin subscriptions table
+export const subscriptions = pgTable('subscriptions', {
+  id: text('id').primaryKey(),
+  plan: text('plan').notNull(),
+  referenceId: text('reference_id').notNull(), // user or organization ID
+  stripeCustomerId: text('stripe_customer_id').notNull(),
+  stripeSubscriptionId: text('stripe_subscription_id').notNull(),
+  status: text('status').notNull(), // active, canceled, past_due, trialing, etc.
+  periodStart: timestamp('period_start'),
+  periodEnd: timestamp('period_end'),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false),
+  seats: integer('seats').default(1),
+  trialStart: timestamp('trial_start'),
+  trialEnd: timestamp('trial_end'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
 })
 
 export const billingHistory = pgTable('billing_history', {
