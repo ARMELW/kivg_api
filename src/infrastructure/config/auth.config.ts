@@ -6,6 +6,7 @@ import { admin as adminPlugin, emailOTP, openAPI } from 'better-auth/plugins'
 import { Hono } from 'hono'
 import Stripe from 'stripe'
 import { db } from '../database/db'
+import { getBetterAuthPlans } from './better-auth-plans.config'
 import {
   emailTemplates,
   sendChangeEmailVerification,
@@ -47,7 +48,7 @@ const authPlugins = [
           createCustomerOnSignUp: true,
           subscription: {
             enabled: true,
-            plans: () => []
+            plans: getBetterAuthPlans
           }
         })
       ]
