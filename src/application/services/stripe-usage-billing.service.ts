@@ -131,6 +131,14 @@ export class StripeUsageBillingService {
     priceId?: string
     error?: string
   }> {
+    // ⚠️ WARNING: This method is temporarily disabled for Stripe v19+
+    // Metered billing in Stripe v19 requires the new Meter Events API.
+    // The old createUsageRecord API is deprecated.
+    // Until the Meter API is implemented, this method creates a licensed price instead.
+    // This means billing will NOT be based on actual usage.
+    // See: https://docs.stripe.com/billing/subscriptions/usage-based/recording-usage-api
+    console.warn('createMeteredPrice: Metered billing not supported in Stripe v19 without Meter API. Creating licensed price instead.')
+    
     try {
       // Skip if Stripe is not configured
       if (!env.STRIPE_SECRET_KEY) {
@@ -162,22 +170,23 @@ export class StripeUsageBillingService {
         })
       }
 
-      // NOTE: Metered pricing in Stripe v19+ requires creating a Meter first
-      // Then linking the meter to the price via recurring.meter
-      // For now, we'll create a simple recurring price without metered billing
-      // TODO: Implement Meter Events API for usage-based billing
+      // TODO: Implement Meter Events API for true usage-based billing
+      // 1. Create a Meter: stripe.billing.meters.create({ event_name, value_settings })
+      // 2. Link meter to price: recurring: { meter: meter_id }
+      // 3. Send usage events: stripe.billing.meterEvents.create()
       const price = await this.stripe.prices.create({
         product: product.id,
         currency: 'eur',
         unit_amount: Math.round(pricePerVideo * 100), // Convert to cents
         recurring: {
           interval: 'month',
-          usage_type: 'licensed' // Changed from 'metered' until Meter API is implemented
+          usage_type: 'licensed' // ⚠️ NOT metered - requires Meter API migration
         },
         metadata: {
           plan: planId,
           type: 'ai_video_overage',
-          note: 'Needs migration to Meter Events API for metered billing'
+          warning: 'Licensed billing - NOT usage-based. Needs Meter API migration.',
+          stripe_api_version: '2025-09-30.clover'
         }
       })
 
