@@ -1,8 +1,8 @@
-import { IUseCase } from '@/domain/types/use-case.type'
-import type { UserApiKeysRepositoryInterface } from '@/domain/repositories/user-api-keys.repository.interface'
-import type { ApiProvider } from '@/domain/models/user-api-keys.model'
 import { EncryptionService } from '@/application/services/encryption.service'
+import { IUseCase } from '@/domain/types/use-case.type'
 import { ActivityType } from '@/infrastructure/config/activity.config'
+import type { ApiProvider } from '@/domain/models/user-api-keys.model'
+import type { UserApiKeysRepositoryInterface } from '@/domain/repositories/user-api-keys.repository.interface'
 
 type Params = {
   userId: string
@@ -148,7 +148,7 @@ export class ValidateUserApiKeyUseCase extends IUseCase<Params, Response> {
     }
   }
 
-  private async validateMiniMax(apiKey: string): Promise<boolean> {
+  private validateMiniMax(apiKey: string): boolean {
     try {
       // MiniMax validation - basic format check for now
       // You can implement a real API call when MiniMax provides a test endpoint
@@ -159,7 +159,7 @@ export class ValidateUserApiKeyUseCase extends IUseCase<Params, Response> {
     }
   }
 
-  private async validateMubert(apiKey: string): Promise<boolean> {
+  private validateMubert(apiKey: string): boolean {
     try {
       // Mubert validation - basic format check for now
       // You can implement a real API call when Mubert provides a test endpoint

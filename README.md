@@ -1,6 +1,6 @@
-#BoilerHono Backend
+#doodlio Backend
 
-Backend API pour la plateformeBoilerHono développée avec Hono.js et une architecture hexagonale.
+Backend API pour la plateformedoodlio développée avec Hono.js et une architecture hexagonale.
 
 ## Table des matières 📋
 

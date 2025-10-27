@@ -56,8 +56,6 @@ export class UserRepository implements UserRepositoryInterface {
 
     const conditions = []
 
-    const baseQuery = db.select().from(users)
-
     if (filter.role) {
       conditions.push(eq(users.role, filter.role))
     }
@@ -73,36 +71,33 @@ export class UserRepository implements UserRepositoryInterface {
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined
-    const query = whereClause ? baseQuery.where(whereClause) : baseQuery
 
-    const [{ count }] = await db
-      .select({
-        count: sql<number>`count(${users.id})::int`
-      })
-      .from(query.as('filtered_users'))
+    // Get total count with filters applied
+    const countQuery = db.select({ count: sql<number>`count(*)::int` }).from(users)
+    const countWithFilters = whereClause ? countQuery.where(whereClause) : countQuery
+    const [{ count }] = await countWithFilters
 
     const total = count
 
-    const results = await query.orderBy(users.createdAt).limit(limit).offset(offset)
+    // Get paginated results with filters applied
+    const resultsQuery = db.select().from(users)
+    const resultsWithFilters = whereClause ? resultsQuery.where(whereClause) : resultsQuery
+    const results = await resultsWithFilters.orderBy(users.createdAt).limit(limit).offset(offset)
 
-    const mappedUsers = await Promise.all(
-      results.map((user) => {
-        return {
-          id: user.id,
-          name: user.name,
-          firstname: user.firstname || undefined,
-          lastname: user.lastname || undefined,
-          email: user.email,
-          emailVerified: user.emailVerified,
-          image: user.image || undefined,
-          isAdmin: user.isAdmin,
-          subscriptionPlan: user.subscriptionPlan,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-          role: user.role
-        }
-      })
-    )
+    const mappedUsers = results.map((user) => ({
+      id: user.id,
+      name: user.name,
+      firstname: user.firstname || undefined,
+      lastname: user.lastname || undefined,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      image: user.image || undefined,
+      isAdmin: user.isAdmin,
+      subscriptionPlan: user.subscriptionPlan,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      role: user.role
+    }))
 
     return {
       users: mappedUsers,

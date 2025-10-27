@@ -1,7 +1,7 @@
 import { IUseCase } from '@/domain/types/use-case.type'
-import type { UserApiKeysRepositoryInterface } from '@/domain/repositories/user-api-keys.repository.interface'
-import type { MaskedApiKey } from '@/domain/models/user-api-keys.model'
 import { ActivityType } from '@/infrastructure/config/activity.config'
+import type { MaskedApiKey } from '@/domain/models/user-api-keys.model'
+import type { UserApiKeysRepositoryInterface } from '@/domain/repositories/user-api-keys.repository.interface'
 
 type Params = {
   userId: string

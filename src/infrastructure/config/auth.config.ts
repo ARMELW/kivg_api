@@ -1,10 +1,8 @@
 import { env } from 'node:process'
-import { stripe as stripePlugin } from '@better-auth/stripe'
 import { betterAuth, type User } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { admin as adminPlugin, emailOTP, openAPI } from 'better-auth/plugins'
 import { Hono } from 'hono'
-import Stripe from 'stripe'
 import { db } from '../database/db'
 import {
   emailTemplates,
@@ -15,58 +13,17 @@ import {
 } from './mail.config'
 
 // Initialize Stripe client only if API key is provided
-const hasStripeKey = !!env.STRIPE_SECRET_KEY
-const stripeClient = hasStripeKey
-  ? new Stripe(env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-02-24.acacia'
-    })
-  : (null as any)
+// Disabled for debugging
+// const stripeSecretKey = env.STRIPE_SECRET_KEY ?? ''
+// const hasStripeKey = stripeSecretKey.length > 0
+// const stripeClient = hasStripeKey
+//   ? new Stripe(stripeSecretKey, {
+//       apiVersion: '2025-02-24.acacia'
+//     })
+//   : (null as any)
 
-// Stripe subscription plans configuration
-const stripePlans = [
-  {
-    id: 'starter-monthly',
-    name: 'Starter Monthly',
-    priceId: env.STRIPE_STARTER_MONTHLY_PRICE_ID || '',
-    planType: 'starter',
-    interval: 'month' as const
-  },
-  {
-    id: 'starter-yearly',
-    name: 'Starter Yearly',
-    priceId: env.STRIPE_STARTER_YEARLY_PRICE_ID || '',
-    planType: 'starter',
-    interval: 'year' as const
-  },
-  {
-    id: 'pro-monthly',
-    name: 'Pro Monthly',
-    priceId: env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
-    planType: 'pro',
-    interval: 'month' as const
-  },
-  {
-    id: 'pro-yearly',
-    name: 'Pro Yearly',
-    priceId: env.STRIPE_PRO_YEARLY_PRICE_ID || '',
-    planType: 'pro',
-    interval: 'year' as const
-  },
-  {
-    id: 'enterprise-monthly',
-    name: 'Enterprise Monthly',
-    priceId: env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || '',
-    planType: 'enterprise',
-    interval: 'month' as const
-  },
-  {
-    id: 'enterprise-yearly',
-    name: 'Enterprise Yearly',
-    priceId: env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID || '',
-    planType: 'enterprise',
-    interval: 'year' as const
-  }
-]
+// Stripe subscription plans configuration - disabled
+// const stripePlans = []
 
 // Use 'as any' to bypass complex type inference issues with the stripe plugin
 const authPlugins = [
@@ -82,26 +39,25 @@ const authPlugins = [
       })
     }
   }),
-  adminPlugin(),
-  ...(hasStripeKey
-    ? [
-        stripePlugin({
-          stripeClient: stripeClient as any,
-          stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
-          createCustomerOnSignUp: true,
-          subscription: {
-            enabled: true,
-            trialPeriodDays: 14,
-            plans: stripePlans
-          }
-        })
-      ]
-    : [])
+  adminPlugin()
+  // Stripe plugin temporarily disabled - causes user creation query issues
+  // ...(hasStripeKey
+  //   ? [
+  //       stripePlugin({
+  //         stripeClient: stripeClient as any,
+  //         stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
+  //         createCustomerOnSignUp: true,
+  //         subscription: {
+  //           enabled: true,
+  //           trialPeriodDays: 14,
+  //           plans: stripePlans
+  //         }
+  //       })
+  //     ]
+  //   : [])
 ]
 
-export const auth: any = betterAuth({
-  plugins: authPlugins,
-  socialProviders: {
+/**socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID || '',
       clientSecret: env.GOOGLE_CLIENT_SECRET || '',
@@ -112,7 +68,9 @@ export const auth: any = betterAuth({
       clientSecret: env.GITHUB_CLIENT_SECRET || '',
       enabled: !!(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET)
     }
-  },
+  }**/
+export const auth: any = betterAuth({
+  plugins: authPlugins,
   database: drizzleAdapter(db, {
     provider: 'pg',
     usePlural: true
@@ -129,7 +87,9 @@ export const auth: any = betterAuth({
       banned: { type: 'boolean', default: false, returned: true },
       banReason: { type: 'string', default: null, returned: true },
       banExpires: { type: 'date', default: null, returned: true },
-      subscriptionPlan: { type: 'string', default: 'free', returned: true }
+      subscriptionPlan: { type: 'string', default: 'free', returned: true },
+      hasApiAccess: { type: 'boolean', default: false, returned: true },
+      useOwnApiKeys: { type: 'boolean', default: false, returned: true }
     },
     changeEmail: {
       enabled: true,

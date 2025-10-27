@@ -6,8 +6,8 @@ type EmailParams = {
   text: string
 }
 
-const FROM_NAME = 'Boiler Hono'
-const FROM_EMAIL = 'contact@boilerhono.com'
+const FROM_NAME = 'Doodlio'
+const FROM_EMAIL = 'contact@doodlio.com'
 
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
@@ -19,15 +19,15 @@ const transporter = nodemailer.createTransport({
   }
 })
 
-const SUBSCRIPTION_ACTION_URL = env.SUBSCRIPTION_ACTION_URL || 'https://boilerhono.com/subscription'
+const SUBSCRIPTION_ACTION_URL = env.SUBSCRIPTION_ACTION_URL || 'https://doodlio.com/subscription'
 
 export const emailTemplates = {
   trialStarted(name: string) {
     return {
-      subject: "Bienvenue dans votre période d'essai BoilerHono",
+      subject: "Bienvenue dans votre période d'essai doodlio",
       text: `Bonjour ${name},
 
-Nous sommes ravis de vous accueillir à BoilerHono pour votre période d'essai gratuite.
+Nous sommes ravis de vous accueillir à doodlio pour votre période d'essai gratuite.
 
 Pendant ces prochains jours, vous aurez accès à l'ensemble de nos fonctionnalités premium. Profitez-en pour explorer notre plateforme et découvrir tout ce que nous pouvons vous offrir.
 
@@ -36,7 +36,7 @@ Pour gérer votre abonnement, visitez: ${SUBSCRIPTION_ACTION_URL}
 Si vous avez des questions, n'hésitez pas à nous contacter.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -45,7 +45,7 @@ L'équipe BoilerHono`
       subject: "Votre période d'essai se termine bientôt",
       text: `Bonjour ${name},
 
-Votre période d'essai BoilerHono se termine dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}.
+Votre période d'essai doodlio se termine dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}.
 
 Pour continuer à bénéficier de nos services sans interruption, pensez à souscrire à un abonnement avant la fin de votre période d'essai.
 
@@ -54,7 +54,7 @@ Pour gérer votre abonnement: ${SUBSCRIPTION_ACTION_URL}
 Nous restons à votre disposition pour toute question.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -63,7 +63,7 @@ L'équipe BoilerHono`
       subject: "Dernier jour de votre période d'essai",
       text: `Bonjour ${name},
 
-C'est le dernier jour de votre période d'essai BoilerHono.
+C'est le dernier jour de votre période d'essai doodlio.
 
 Pour éviter toute interruption de service, pensez à souscrire à un abonnement dès aujourd'hui.
 
@@ -72,7 +72,7 @@ Pour gérer votre abonnement: ${SUBSCRIPTION_ACTION_URL}
 Nous restons à votre disposition pour toute question.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -81,7 +81,7 @@ L'équipe BoilerHono`
       subject: "Votre période d'essai est terminée",
       text: `Bonjour ${name},
 
-Votre période d'essai BoilerHono est maintenant terminée.
+Votre période d'essai doodlio est maintenant terminée.
 
 Nous espérons que vous avez apprécié notre plateforme. Pour continuer à utiliser nos services, souscrivez à un abonnement dès maintenant.
 
@@ -90,13 +90,13 @@ Pour gérer votre abonnement: ${SUBSCRIPTION_ACTION_URL}
 Nous restons à votre disposition pour toute question.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
   subscriptionCreated(name: string, planName: string) {
     return {
-      subject: 'Bienvenue dans votre abonnement BoilerHono',
+      subject: 'Bienvenue dans votre abonnement doodlio',
       text: `Bonjour ${name},
 
 Merci d'avoir souscrit à notre formule ${planName}. Votre abonnement est maintenant actif.
@@ -108,16 +108,16 @@ Pour gérer votre abonnement: ${SUBSCRIPTION_ACTION_URL}
 Nous restons à votre disposition pour toute question.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
   subscriptionCancelled(name: string) {
     return {
-      subject: 'Annulation de votre abonnement BoilerHono',
+      subject: 'Annulation de votre abonnement doodlio',
       text: `Bonjour ${name},
 
-Nous confirmons l'annulation de votre abonnement BoilerHono.
+Nous confirmons l'annulation de votre abonnement doodlio.
 
 Vous continuerez à bénéficier de votre accès jusqu'à la fin de la période de facturation en cours.
 
@@ -126,7 +126,7 @@ Si vous changez d'avis, vous pouvez réactiver votre abonnement à tout moment: 
 Nous espérons vous revoir bientôt.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -135,7 +135,7 @@ L'équipe BoilerHono`
       subject: 'Échec du paiement de votre abonnement',
       text: `Bonjour ${name},
 
-Nous n'avons pas pu traiter le paiement pour votre abonnement BoilerHono.
+Nous n'avons pas pu traiter le paiement pour votre abonnement doodlio.
 
 Veuillez vérifier vos informations de paiement pour éviter toute interruption de service.
 
@@ -144,7 +144,7 @@ Pour mettre à jour vos informations de paiement: ${SUBSCRIPTION_ACTION_URL}/pay
 Si vous avez besoin d'aide, n'hésitez pas à nous contacter.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -168,7 +168,7 @@ Pour mettre à jour vos informations de paiement: ${SUBSCRIPTION_ACTION_URL}/pay
 Nous restons à votre disposition pour toute question.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -177,7 +177,7 @@ L'équipe BoilerHono`
       subject: 'Votre abonnement a expiré',
       text: `Bonjour ${name},
 
-Votre abonnement BoilerHono a expiré et votre accès aux fonctionnalités premium a été suspendu.
+Votre abonnement doodlio a expiré et votre accès aux fonctionnalités premium a été suspendu.
 
 Pour reprendre votre abonnement et retrouver l'accès à nos services:
 ${SUBSCRIPTION_ACTION_URL}
@@ -185,7 +185,7 @@ ${SUBSCRIPTION_ACTION_URL}
 Nous espérons vous revoir bientôt.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -194,7 +194,7 @@ L'équipe BoilerHono`
       subject: 'Confirmation de suppression de compte',
       text: `Bonjour,
 
-Nous avons reçu une demande de suppression de votre compte BoilerHono.
+Nous avons reçu une demande de suppression de votre compte doodlio.
 
 Pour confirmer cette action, veuillez cliquer sur le lien suivant:
 ${verificationUrl}
@@ -204,7 +204,7 @@ Si vous n'êtes pas à l'origine de cette demande, veuillez ignorer ce message e
 Ce lien expirera dans 24 heures.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -213,13 +213,13 @@ L'équipe BoilerHono`
       subject: 'Vérifiez votre adresse email',
       text: `Bonjour,
 
-Merci de vous être inscrit à BoilerHono. Pour finaliser votre inscription, veuillez vérifier votre adresse email en cliquant sur le lien suivant:
+Merci de vous être inscrit à doodlio. Pour finaliser votre inscription, veuillez vérifier votre adresse email en cliquant sur le lien suivant:
 ${verificationUrl}
 
 Ce lien expirera dans 24 heures.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -228,7 +228,7 @@ L'équipe BoilerHono`
       subject: 'Réinitialisation de votre mot de passe',
       text: `Bonjour,
 
-Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte BoilerHono.
+Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte doodlio.
 
 Pour créer un nouveau mot de passe, veuillez cliquer sur le lien suivant:
 ${verificationUrl}
@@ -238,7 +238,7 @@ Si vous n'êtes pas à l'origine de cette demande, veuillez ignorer ce message.
 Ce lien expirera dans 24 heures.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
 
@@ -247,7 +247,7 @@ L'équipe BoilerHono`
       subject: "Vérification du changement d'email",
       text: `Bonjour,
 
-Nous avons reçu une demande de changement d'adresse email pour votre compte BoilerHono.
+Nous avons reçu une demande de changement d'adresse email pour votre compte doodlio.
 
 Pour confirmer cette nouvelle adresse email, veuillez cliquer sur le lien suivant:
 ${verificationUrl}
@@ -257,14 +257,14 @@ Si vous n'êtes pas à l'origine de cette demande, veuillez ignorer ce message e
 Ce lien expirera dans 24 heures.
 
 Cordialement,
-L'équipe BoilerHono`
+L'équipe doodlio`
     }
   },
   otpLogin(otpCode: string, name?: string) {
     return {
-      subject: 'Code de connexion BoilerHono',
+      subject: 'Code de connexion doodlio',
       text: `Bonjour ${name ? name : ''},
-        Voici votre code de connexion à usage unique pour BoilerHono:
+        Voici votre code de connexion à usage unique pour doodlio:
         
         ${otpCode}
           
@@ -273,7 +273,7 @@ L'équipe BoilerHono`
         Si vous n'avez pas demandé ce code, veuillez ignorer ce message.
           
         Cordialement,
-        L'équipe BoilerHono`
+        L'équipe doodlio`
     }
   }
 }

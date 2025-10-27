@@ -171,7 +171,7 @@ export function checkAudioTracksLimit(c: Context, next: Next) {
 /**
  * Middleware to check if user has access to AI features
  */
-export async function checkAIFeatureAccess(c: Context, next: Next) {
+export function checkAIFeatureAccess(c: Context, next: Next) {
   const user = c.get('user') as any
 
   if (!user) {
@@ -201,8 +201,7 @@ export async function checkAIFeatureAccess(c: Context, next: Next) {
     return c.json(
       {
         success: false,
-        error:
-          'AI features are not available on your current plan. Please upgrade or configure your own API keys.',
+        error: 'AI features are not available on your current plan. Please upgrade or configure your own API keys.',
         upgradeRequired: true,
         currentPlan: userPlan,
         canUseBYOK: true

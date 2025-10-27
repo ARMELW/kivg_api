@@ -3,19 +3,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: boilerhono-back
+  name: doodlio-back
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: boilerhono-back
+      app: doodlio-back
   template:
     metadata:
       labels:
-        app: boilerhono-back
+        app: doodlio-back
     spec:
       containers:
-        - name: boilerhono-back
-          image: registry.boilerhono.ac/backend-boilerhono:1.0
+        - name: doodlio-back
+          image: registry.doodlio.ac/backend-doodlio:1.0
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -38,10 +39,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: boilerhono-back
+  name: doodlio-back
 spec:
   selector:
-    app: boilerhono-back
+    app: doodlio-back
   ports:
     - port: 3000
       targetPort: 3000
@@ -51,22 +52,22 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: dev-api.boilerhono.ac
+  name: dev-api.doodlio.ac
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: 'true'
 spec:
   tls:
     - hosts:
-        - dev-api.boilerhono.ac
-      secretName: dev-api.boilerhono.ac-tls
+        - dev-api.doodlio.ac
+      secretName: dev-api.doodlio.ac-tls
   rules:
-    - host: dev-api.boilerhono.ac
+    - host: dev-api.doodlio.ac
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: boilerhono-back
+                name: doodlio-back
                 port:
                   number: 3000

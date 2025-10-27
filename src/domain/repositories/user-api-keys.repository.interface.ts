@@ -1,4 +1,4 @@
-import type { ApiKeyInput, ApiProvider, MaskedApiKey, UserApiKey } from '../models/user-api-keys.model'
+import type { ApiProvider, MaskedApiKey, UserApiKey } from '../models/user-api-keys.model'
 
 export interface UserApiKeysRepositoryInterface {
   /**

@@ -10,8 +10,8 @@ import {
   ProjectController,
   SceneController,
   TemplateController,
-  UserController,
-  UserApiKeysController
+  UserApiKeysController,
+  UserController
 } from './infrastructure/controllers'
 import { AIController } from './infrastructure/controllers/ai.controller'
 import { FontController } from './infrastructure/controllers/font.controller'
@@ -41,7 +41,7 @@ const PORT = Bun.env.PORT || 3000
 
 console.info(`
 \u001B[34m╔══════════════════════════════════════════════════════╗
-║               \u001B[1mBOILER HONO API\u001B[0m\u001B[34m                ║
+║               \u001B[1mDoodlio API\u001B[0m\u001B[34m                ║
 ╠══════════════════════════════════════════════════════╣
 ║                                                      ║
 ║  \u001B[0m🚀 Server started successfully                   \u001B[34m║

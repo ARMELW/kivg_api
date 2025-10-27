@@ -1,9 +1,9 @@
-import { eq, and } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
+import { EncryptionService } from '@/application/services/encryption.service'
+import type { ApiProvider, MaskedApiKey, UserApiKey } from '@/domain/models/user-api-keys.model'
+import type { UserApiKeysRepositoryInterface } from '@/domain/repositories/user-api-keys.repository.interface'
 import { db } from '../database/db'
 import { userApiKeys } from '../database/schema/schema'
-import type { UserApiKeysRepositoryInterface } from '@/domain/repositories/user-api-keys.repository.interface'
-import type { ApiKeyInput, ApiProvider, MaskedApiKey, UserApiKey } from '@/domain/models/user-api-keys.model'
-import { EncryptionService } from '@/application/services/encryption.service'
 
 export class UserApiKeysRepository implements UserApiKeysRepositoryInterface {
   private encryptionService: EncryptionService
@@ -89,7 +89,7 @@ export class UserApiKeysRepository implements UserApiKeysRepositoryInterface {
           createdAt: key.createdAt,
           updatedAt: key.updatedAt
         }
-      } catch (error) {
+      } catch {
         // If decryption fails, return with generic mask
         return {
           id: key.id,

@@ -1,4 +1,4 @@
-# Principes SOLID dans BoilerHono Backend
+# Principes SOLID dans doodlio Backend
 
 Les principes SOLID sont fondamentaux dans notre architecture. Voici comment nous les appliquons dans notre projet.
 
@@ -139,7 +139,7 @@ export class UserService {
         await this.emailService.sendEmail(
             user.email,
             'Bienvenue',
-            'Bienvenue surBoilerHono!'
+            'Bienvenue surdoodlio!'
         )
         return user
     }

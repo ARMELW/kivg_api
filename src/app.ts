@@ -90,9 +90,9 @@ export class App {
 
         info: {
           version: '1.0.0',
-          title: 'Boiler Hono API',
+          title: 'Doodlio API',
           description: `# Introduction 
-        \nBoilerHono API . \n`
+        \ndoodlio API . \n`
         },
         servers: [{ url: `${protocol}//${hostname}${port ? `:${port}` : ''}`, description: 'Current environment' }]
       }
@@ -101,18 +101,18 @@ export class App {
     this.app.get(
       '/docs',
       apiReference({
-        pageTitle: 'Boiler Hono API Documentation',
+        pageTitle: 'Doodlio API Documentation',
         theme: 'deepSpace',
         isEditable: false,
         layout: 'modern',
         darkMode: true,
         metaData: {
-          applicationName: 'Boiler Hono API',
+          applicationName: 'Doodlio API',
           author: 'Armel Wanes',
           creator: 'Armel Wanes',
           publisher: 'Armel Wanes',
           robots: 'index, follow',
-          description: 'Boiler Hono API is ....'
+          description: 'Doodlio API is ....'
         },
         url: Bun.env.NODE_ENV === 'production' ? 'https://boiler-hono.ac/swagger' : 'http://localhost:3000/swagger'
       })

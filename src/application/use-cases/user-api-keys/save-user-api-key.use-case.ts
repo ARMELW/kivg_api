@@ -1,8 +1,8 @@
-import { IUseCase } from '@/domain/types/use-case.type'
-import type { UserApiKeysRepositoryInterface } from '@/domain/repositories/user-api-keys.repository.interface'
-import type { ApiKeyInput, UserApiKey } from '@/domain/models/user-api-keys.model'
 import { EncryptionService } from '@/application/services/encryption.service'
+import { IUseCase } from '@/domain/types/use-case.type'
 import { ActivityType } from '@/infrastructure/config/activity.config'
+import type { ApiKeyInput } from '@/domain/models/user-api-keys.model'
+import type { UserApiKeysRepositoryInterface } from '@/domain/repositories/user-api-keys.repository.interface'
 
 type Params = ApiKeyInput
 

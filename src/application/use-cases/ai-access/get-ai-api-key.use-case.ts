@@ -1,7 +1,7 @@
-import { IUseCase } from '@/domain/types/use-case.type'
-import type { ApiProvider } from '@/domain/models/user-api-keys.model'
 import { ApiKeyResolverService } from '@/application/services/api-key-resolver.service'
+import { IUseCase } from '@/domain/types/use-case.type'
 import { ActivityType } from '@/infrastructure/config/activity.config'
+import type { ApiProvider } from '@/domain/models/user-api-keys.model'
 
 type Params = {
   userId: string | null

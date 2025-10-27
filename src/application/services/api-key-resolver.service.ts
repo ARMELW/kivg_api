@@ -1,5 +1,6 @@
-import type { ApiProvider } from '@/domain/models/user-api-keys.model'
+import { env } from 'node:process'
 import { UserApiKeysRepository } from '@/infrastructure/repositories/user-api-keys.repository'
+import type { ApiProvider } from '@/domain/models/user-api-keys.model'
 import { EncryptionService } from './encryption.service'
 
 /**
@@ -80,15 +81,15 @@ export class ApiKeyResolverService {
   private getPlatformApiKey(provider: ApiProvider): string | null {
     switch (provider) {
       case 'openai':
-        return process.env.OPENAI_API_KEY || null
+        return env.OPENAI_API_KEY || null
       case 'elevenlabs':
-        return process.env.ELEVENLABS_API_KEY || null
+        return env.ELEVENLABS_API_KEY || null
       case 'gemini':
-        return process.env.GEMINI_API_KEY || null
+        return env.GEMINI_API_KEY || null
       case 'minimax':
-        return process.env.MINIMAX_API_KEY || null
+        return env.MINIMAX_API_KEY || null
       case 'mubert':
-        return process.env.MUBERT_API_KEY || null
+        return env.MUBERT_API_KEY || null
       default:
         return null
     }

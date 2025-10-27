@@ -1,3 +1,4 @@
+import { env } from 'node:process'
 import forge from 'node-forge'
 
 /**
@@ -14,12 +15,10 @@ export class EncryptionService {
 
   constructor() {
     // Get encryption key from environment or generate a warning
-    this.encryptionKey = process.env.ENCRYPTION_KEY || ''
+    this.encryptionKey = env.ENCRYPTION_KEY || ''
 
     if (!this.encryptionKey) {
-      console.warn(
-        'WARNING: ENCRYPTION_KEY not set in environment. Using default key (NOT SECURE FOR PRODUCTION)'
-      )
+      console.warn('WARNING: ENCRYPTION_KEY not set in environment. Using default key (NOT SECURE FOR PRODUCTION)')
       // Default key for development only - DO NOT USE IN PRODUCTION
       this.encryptionKey = 'dev-only-key-please-change-in-production-environment!'
     }
@@ -28,7 +27,7 @@ export class EncryptionService {
     if (this.encryptionKey.length < this.keySize) {
       this.encryptionKey = this.encryptionKey.padEnd(this.keySize, '0')
     } else if (this.encryptionKey.length > this.keySize) {
-      this.encryptionKey = this.encryptionKey.substring(0, this.keySize)
+      this.encryptionKey = this.encryptionKey.slice(0, Math.max(0, this.keySize))
     }
   }
 
@@ -45,7 +44,7 @@ export class EncryptionService {
       // Create cipher
       const cipher = forge.cipher.createCipher(this.algorithm, this.encryptionKey)
       cipher.start({
-        iv: iv,
+        iv,
         tagLength: this.tagSize * 8 // Convert bytes to bits
       })
 
@@ -78,14 +77,14 @@ export class EncryptionService {
       const combined = forge.util.decode64(encryptedText)
 
       // Extract IV, encrypted data, and tag
-      const iv = combined.substring(0, this.ivSize)
-      const tag = combined.substring(combined.length - this.tagSize)
-      const encrypted = combined.substring(this.ivSize, combined.length - this.tagSize)
+      const iv = combined.slice(0, Math.max(0, this.ivSize))
+      const tag = combined.slice(Math.max(0, combined.length - this.tagSize))
+      const encrypted = combined.slice(this.ivSize, combined.length - this.tagSize)
 
       // Create decipher
       const decipher = forge.cipher.createDecipher(this.algorithm, this.encryptionKey)
       decipher.start({
-        iv: iv,
+        iv,
         tag: forge.util.createBuffer(tag)
       })
 
