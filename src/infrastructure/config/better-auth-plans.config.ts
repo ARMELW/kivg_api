@@ -22,7 +22,7 @@ export async function getBetterAuthPlans(): Promise<StripePlan[]> {
       .map((plan) => {
         const stripePlan: StripePlan = {
           name: plan.name,
-          priceId: plan.stripePriceIdMonthly!
+          priceId: plan.stripePriceIdMonthly as string // Safe because filter ensures this exists
         }
 
         // Add yearly price ID if available
