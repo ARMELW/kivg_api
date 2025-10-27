@@ -1,6 +1,7 @@
 export * from './permission.controller'
 export * from './pricing.controller'
 export * from './user.controller'
+export * from './user-api-keys.controller'
 export * from './asset.controller'
 export * from './audio.controller'
 export * from './channel.controller'
