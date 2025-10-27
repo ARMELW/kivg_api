@@ -24,13 +24,13 @@ This implementation introduces a flexible subscription model with optional Bring
 | Plan | Old Price | New Price | Key Changes |
 |------|-----------|-----------|-------------|
 | Free | €0 | €0 | Unlimited 1-min videos (was 3 scenes limit), BYOK support |
-| Starter | €9 | €5 | 5-min videos (was 10 scenes), BYOK support |
-| Pro | €39 | €9 | Unlimited videos, AI as optional add-on |
+| Starter | €9 | €5 | ~44% reduction, 5-min videos, BYOK support |
+| Pro | €39 | €9 | ~77% reduction, Unlimited videos, AI optional |
 | Pro Plus | €59 | REMOVED | Consolidated into Pro |
-| Enterprise | €149 | €49 | Full features, optional BYOK |
+| Enterprise | €149 | €49 | ~67% reduction, Full features, optional BYOK |
 
 #### Key Benefits
-- **70-80% price reduction** on base plans
+- **44-77% price reduction** across paid plans
 - **AI features optional** - not forced on users who don't need them
 - **BYOK available on all plans** - even Free users can use AI
 - **No monthly AI limits** with BYOK
@@ -203,6 +203,8 @@ Savings vs old Pro Plus: €59 - €46 = €13/month (22% savings)
 
 ### 12. Deployment Checklist
 
+**Note**: This checklist is for future deployment. The code implementation is complete and tested.
+
 #### Environment Setup
 - [ ] Set `ENCRYPTION_KEY` (32 bytes, random, secure)
 - [ ] Update Stripe price IDs for new plans
@@ -263,7 +265,7 @@ Savings vs old Pro Plus: €59 - €46 = €13/month (22% savings)
 ## Benefits Summary
 
 ### For Users
-- **90% cost reduction** on base plans
+- **44-77% cost reduction** across paid plans
 - **No forced AI costs** - pay only if you use it
 - **Complete control** over AI spending
 - **No monthly limits** with BYOK
