@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { CreatePlanUseCase } from './create-plan.use-case'
+import { ErrorCode } from '@/domain/types/error.type'
 import type { StripePlanSyncService } from '@/application/services/stripe-plan-sync.service'
 import type { CreatePlanDTO } from '@/domain/models/plan.model'
 import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
-import { ErrorCode } from '@/domain/types/error.type'
+import { CreatePlanUseCase } from './create-plan.use-case'
 
 describe('CreatePlanUseCase', () => {
   let createPlanUseCase: CreatePlanUseCase

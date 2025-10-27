@@ -1,8 +1,8 @@
+import { ErrorCode } from '@/domain/types/error.type'
+import { IUseCase } from '@/domain/types/use-case.type'
+import { ActivityType } from '@/infrastructure/config/activity.config'
 import type { StripePlanSyncService } from '@/application/services/stripe-plan-sync.service'
 import type { PlanRepositoryInterface } from '@/domain/repositories/plan.repository.interface'
-import { IUseCase } from '@/domain/types/use-case.type'
-import { ErrorCode } from '@/domain/types/error.type'
-import { ActivityType } from '@/infrastructure/config/activity.config'
 
 type Params = {
   id: string
