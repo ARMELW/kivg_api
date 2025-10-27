@@ -280,6 +280,16 @@ En plus des conventions de commit, nous suivons ces pratiques :
 - Documentation exhaustive
 - Code formatting avec Prettier
 
+## Documentation Complémentaire 📖
+
+### Analyses et Guides
+- [**Analyse Commerciale Complète**](./BUSINESS_ANALYSIS.md) : Analyse de marché, stratégie, projections financières
+- [**AI Features**](./AI_FEATURES.md) : Documentation complète des fonctionnalités IA
+- [**AI Pricing Strategy**](./AI_PRICING_STRATEGY.md) : Stratégie de tarification et coûts IA
+- [**Subscription System**](./SUBSCRIPTION_SYSTEM.md) : Système d'abonnement et BYOK
+- [**API Documentation**](./API_DOCUMENTATION.md) : Documentation API détaillée
+- [**Security Checklist**](./SECURITY_CHECKLIST.md) : Guide de sécurité
+
 ## Contribution 🤝
 
 1. Créer une branche (`git checkout -b feature/amazing-feature`)
