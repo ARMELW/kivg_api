@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { Actions, Subjects } from '../src/domain/types/permission.type'
 import { auth } from '../src/infrastructure/config/auth.config'
 import { db } from '../src/infrastructure/database/db/index'
@@ -42,7 +42,6 @@ async function createSuperAdminRole() {
     roleId: superAdminRole.id,
     resourceType: subject,
     actions: Object.values(Actions),
-    conditions: {},
     createdAt: now,
     updatedAt: now
   }))
@@ -66,10 +65,10 @@ async function createSuperAdmin(adminData, superAdminRole) {
       console.log(`📝 Utilisateur ${adminData.email} existe déjà`)
 
       const existingUserRole = await db.query.userRoles.findFirst({
-        where: eq(userRoles.userId, existingUser.id)
+        where: and(eq(userRoles.userId, existingUser.id), eq(userRoles.roleId, superAdminRole.id))
       })
 
-      if (!existingUserRole || existingUserRole.roleId !== superAdminRole.id) {
+      if (!existingUserRole) {
         await db.insert(userRoles).values({
           id: crypto.randomUUID(),
           userId: existingUser.id,
@@ -78,6 +77,8 @@ async function createSuperAdmin(adminData, superAdminRole) {
           updatedAt: now
         })
         console.log(`✅ Rôle super admin assigné à ${adminData.email}`)
+      } else {
+        console.log(`✓ ${adminData.email} a déjà le rôle super admin`)
       }
 
       return { user: existingUser, password: null, isExisting: true }
@@ -94,14 +95,7 @@ async function createSuperAdmin(adminData, superAdminRole) {
         banned: false,
         banReason: '',
         banExpires: new Date(0),
-        isAdmin: true,
-        isTrialActive: false,
-        trialStartDate: new Date(0),
-        trialEndDate: new Date(0),
-        stripeCustomerId: `${Math.random().toString(36).slice(2, 15)}`,
-        stripeSubscriptionId: `${Math.random().toString(36).slice(2, 15)}`,
-        stripePriceId: '',
-        stripeCurrentPeriodEnd: new Date(0)
+        isAdmin: true
       }
     })
 
