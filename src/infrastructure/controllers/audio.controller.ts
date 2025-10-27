@@ -3,12 +3,15 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import type { Routes } from '@/domain/types'
 import { uploadFile } from '../config/upload.config'
+import { AudioRepository } from '../repositories/audio.repository'
 
 export class AudioController implements Routes {
   public controller: OpenAPIHono
+  private audioRepository: AudioRepository
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.audioRepository = new AudioRepository()
     this.initRoutes()
   }
 
@@ -75,19 +78,16 @@ export class AudioController implements Routes {
           const buffer = Buffer.from(await file.arrayBuffer())
           const uploadResult = await uploadFile(buffer, 'audio')
 
-          const audio = {
-            id: crypto.randomUUID(),
+          const audio = await this.audioRepository.create({
             userId: user.id,
             fileName,
             fileUrl: uploadResult.url,
             duration: 0, // Would be extracted from file metadata
             size: file.size,
-            category,
+            category: category as 'music' | 'sfx' | 'voiceover' | 'ambient' | 'other',
             tags,
-            isFavorite: false,
-            uploadedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
+            isFavorite: false
+          })
 
           return c.json({ success: true, data: audio })
         } catch {
@@ -130,7 +130,7 @@ export class AudioController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -140,11 +140,20 @@ export class AudioController implements Routes {
           const query = c.req.query()
           const page = Number.parseInt(query.page || '1')
           const limit = Number.parseInt(query.limit || '20')
+          const isFavorite = query.favoritesOnly === 'true' ? true : undefined
+
+          const result = await this.audioRepository.findAll({
+            userId: user.id,
+            skip: (page - 1) * limit,
+            limit,
+            category: query.category,
+            isFavorite
+          })
 
           return c.json({
             success: true,
-            data: [],
-            total: 0,
+            data: result.audioFiles,
+            total: result.total,
             page,
             limit
           })
@@ -181,7 +190,7 @@ export class AudioController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -190,9 +199,18 @@ export class AudioController implements Routes {
 
           const { id } = c.req.param()
 
+          const audio = await this.audioRepository.findById(id)
+          if (!audio) {
+            return c.json({ success: false, error: 'Audio file not found' }, 404)
+          }
+
+          if (audio.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
           return c.json({
             success: true,
-            data: { id, message: 'Audio file would be returned here' }
+            data: audio
           })
         } catch {
           return c.json({ success: false, error: 'Failed to fetch audio file' }, 400)
@@ -261,9 +279,20 @@ export class AudioController implements Routes {
           const { id } = c.req.param()
           const body = await c.req.json()
 
+          const audio = await this.audioRepository.findById(id)
+          if (!audio) {
+            return c.json({ success: false, error: 'Audio file not found' }, 404)
+          }
+
+          if (audio.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
+          const updated = await this.audioRepository.update(id, body)
+
           return c.json({
             success: true,
-            data: { id, ...body, updatedAt: new Date().toISOString() }
+            data: updated
           })
         } catch {
           return c.json({ success: false, error: 'Failed to update audio file' }, 400)
@@ -298,7 +327,7 @@ export class AudioController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -306,6 +335,17 @@ export class AudioController implements Routes {
           }
 
           const { id } = c.req.param()
+
+          const audio = await this.audioRepository.findById(id)
+          if (!audio) {
+            return c.json({ success: false, error: 'Audio file not found' }, 404)
+          }
+
+          if (audio.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
+          await this.audioRepository.delete(id)
 
           return c.json({
             success: true,

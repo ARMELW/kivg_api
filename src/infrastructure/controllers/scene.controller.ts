@@ -1,12 +1,15 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import type { Routes } from '@/domain/types'
+import { SceneRepository } from '../repositories/scene.repository'
 
 export class SceneController implements Routes {
   public controller: OpenAPIHono
+  private sceneRepository: SceneRepository
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.sceneRepository = new SceneRepository()
     this.initRoutes()
   }
 
@@ -60,21 +63,25 @@ export class SceneController implements Routes {
 
           const body = await c.req.json()
 
-          const scene = {
-            id: crypto.randomUUID(),
-            ...body,
+          const scene = await this.sceneRepository.create({
+            projectId: body.projectId,
+            title: body.title,
+            content: body.content,
+            duration: body.duration || 10,
             animation: 'fade',
-            sceneImage: null,
+            backgroundImage: body.backgroundImage,
+            sceneImage: undefined,
+            layers: body.layers || [],
+            cameras: body.cameras || [],
             sceneCameras: [],
             multiTimeline: {},
             audio: {},
-            sceneAudio: null,
+            sceneAudio: undefined,
+            transitionType: body.transitionType || 'fade',
             draggingSpeed: 1,
             slideDuration: 0,
-            syncSlideWithVoice: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
+            syncSlideWithVoice: false
+          })
 
           return c.json({ success: true, data: scene }, 201)
         } catch {
@@ -116,7 +123,7 @@ export class SceneController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -127,10 +134,17 @@ export class SceneController implements Routes {
           const page = Number.parseInt(query.page || '1')
           const limit = Number.parseInt(query.limit || '10')
 
+          const result = await this.sceneRepository.findAll({
+            projectId: query.projectId,
+            skip: (page - 1) * limit,
+            limit,
+            filter: query.filter
+          })
+
           return c.json({
             success: true,
-            data: [],
-            total: 0,
+            data: result.scenes,
+            total: result.total,
             page,
             limit
           })
@@ -167,7 +181,7 @@ export class SceneController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -176,9 +190,14 @@ export class SceneController implements Routes {
 
           const { id } = c.req.param()
 
+          const scene = await this.sceneRepository.findById(id)
+          if (!scene) {
+            return c.json({ success: false, error: 'Scene not found' }, 404)
+          }
+
           return c.json({
             success: true,
-            data: { id, message: 'Scene would be returned here' }
+            data: scene
           })
         } catch {
           return c.json({ success: false, error: 'Failed to fetch scene' }, 400)
@@ -238,9 +257,16 @@ export class SceneController implements Routes {
           const { id } = c.req.param()
           const body = await c.req.json()
 
+          const scene = await this.sceneRepository.findById(id)
+          if (!scene) {
+            return c.json({ success: false, error: 'Scene not found' }, 404)
+          }
+
+          const updated = await this.sceneRepository.update(id, body)
+
           return c.json({
             success: true,
-            data: { id, ...body, updatedAt: new Date().toISOString() }
+            data: updated
           })
         } catch {
           return c.json({ success: false, error: 'Failed to update scene' }, 400)
@@ -275,7 +301,7 @@ export class SceneController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -284,13 +310,14 @@ export class SceneController implements Routes {
 
           const { id } = c.req.param()
 
-          const duplicatedScene = {
-            id: crypto.randomUUID(),
-            originalId: id,
-            createdAt: new Date().toISOString()
+          const scene = await this.sceneRepository.findById(id)
+          if (!scene) {
+            return c.json({ success: false, error: 'Scene not found' }, 404)
           }
 
-          return c.json({ success: true, data: duplicatedScene }, 201)
+          const duplicated = await this.sceneRepository.duplicate(id)
+
+          return c.json({ success: true, data: duplicated }, 201)
         } catch {
           return c.json({ success: false, error: 'Failed to duplicate scene' }, 400)
         }
@@ -331,18 +358,28 @@ export class SceneController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
             return c.json({ success: false, error: 'Unauthorized' }, 401)
           }
 
-          //const body = await c.req.json()
+          const body = await c.req.json()
+
+          const success = await this.sceneRepository.reorder(body.projectId, body.sceneIds)
+
+          if (!success) {
+            return c.json({ success: false, error: 'Failed to reorder scenes' }, 400)
+          }
+
+          const result = await this.sceneRepository.findAll({
+            projectId: body.projectId
+          })
 
           return c.json({
             success: true,
-            scenes: []
+            scenes: result.scenes
           })
         } catch {
           return c.json({ success: false, error: 'Failed to reorder scenes' }, 400)
@@ -377,7 +414,7 @@ export class SceneController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -385,6 +422,13 @@ export class SceneController implements Routes {
           }
 
           const { id } = c.req.param()
+
+          const scene = await this.sceneRepository.findById(id)
+          if (!scene) {
+            return c.json({ success: false, error: 'Scene not found' }, 404)
+          }
+
+          await this.sceneRepository.delete(id)
 
           return c.json({
             success: true,
