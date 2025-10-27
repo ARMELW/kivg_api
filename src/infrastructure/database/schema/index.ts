@@ -1,5 +1,17 @@
 import { relations, type InferModel } from 'drizzle-orm'
-import { aiUsage, assets, audioFiles, channels, exports, projects, roles, scenes, userRoles, users } from './schema'
+import {
+  aiUsage,
+  assets,
+  audioFiles,
+  channels,
+  exports,
+  projects,
+  roles,
+  scenes,
+  userApiKeys,
+  userRoles,
+  users
+} from './schema'
 
 export * from './schema'
 
@@ -60,6 +72,13 @@ export const scenesRelations = relations(scenes, ({ one, many }) => ({
 export const audioFilesRelations = relations(audioFiles, ({ one }) => ({
   user: one(users, {
     fields: [audioFiles.userId],
+    references: [users.id]
+  })
+}))
+
+export const userApiKeysRelations = relations(userApiKeys, ({ one }) => ({
+  user: one(users, {
+    fields: [userApiKeys.userId],
     references: [users.id]
   })
 }))

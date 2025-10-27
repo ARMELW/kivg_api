@@ -171,7 +171,7 @@ export function checkAudioTracksLimit(c: Context, next: Next) {
 /**
  * Middleware to check if user has access to AI features
  */
-export function checkAIFeatureAccess(c: Context, next: Next) {
+export async function checkAIFeatureAccess(c: Context, next: Next) {
   const user = c.get('user') as any
 
   if (!user) {
@@ -185,20 +185,38 @@ export function checkAIFeatureAccess(c: Context, next: Next) {
     return c.json({ success: false, error: 'Invalid subscription plan' }, 400)
   }
 
+  // Check if user has API access via subscription
   const hasAIVoice = plan.features.hasAIVoice
   const hasAIScriptGenerator = plan.features.hasAIScriptGenerator
+  const hasApiAccess = user.hasApiAccess || false
+  const useOwnApiKeys = user.useOwnApiKeys || false
 
-  if (!hasAIVoice && !hasAIScriptGenerator) {
+  // User can access AI features if:
+  // 1. Their plan includes AI features, OR
+  // 2. They have API access enabled, OR
+  // 3. They are using their own API keys (BYOK)
+  const canAccessAI = hasAIVoice || hasAIScriptGenerator || hasApiAccess || useOwnApiKeys
+
+  if (!canAccessAI) {
     return c.json(
       {
         success: false,
-        error: 'AI features are not available on your current plan. Please upgrade to Pro or Enterprise.',
+        error:
+          'AI features are not available on your current plan. Please upgrade or configure your own API keys.',
         upgradeRequired: true,
-        currentPlan: userPlan
+        currentPlan: userPlan,
+        canUseBYOK: true
       },
       403
     )
   }
+
+  // Store AI access info in context for use cases
+  c.set('aiAccess', {
+    hasApiAccess,
+    useOwnApiKeys,
+    planIncludesAI: hasAIVoice || hasAIScriptGenerator
+  })
 
   return next()
 }

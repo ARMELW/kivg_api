@@ -4,7 +4,7 @@ export const pricingData: SubscriptionPlan[] = [
   {
     id: 'free',
     title: 'Gratuit',
-    description: 'Découverte - Démarrez sans risque',
+    description: 'Plan gratuit - Vidéos illimitées de 1 minute',
     childLimit: 0,
     prices: {
       monthly: 0,
@@ -15,7 +15,7 @@ export const pricingData: SubscriptionPlan[] = [
       yearly: null
     },
     features: {
-      maxScenes: 3,
+      maxScenes: -1, // unlimited
       maxDuration: 60, // 1 minute in seconds
       exportQuality: '720p',
       hasWatermark: true,
@@ -36,23 +36,23 @@ export const pricingData: SubscriptionPlan[] = [
   {
     id: 'starter',
     title: 'Starter',
-    description: 'Créateur - Pour les créateurs débutants',
+    description: 'Créateur - Vidéos de 5 minutes',
     childLimit: 0,
     prices: {
-      monthly: 9,
-      yearly: 90
+      monthly: 5,
+      yearly: 50
     },
     stripeIds: {
       monthly: process.env.STRIPE_STARTER_MONTHLY_PRICE_ID || '',
       yearly: process.env.STRIPE_STARTER_YEARLY_PRICE_ID || ''
     },
     features: {
-      maxScenes: 10,
+      maxScenes: -1, // unlimited
       maxDuration: 300, // 5 minutes in seconds
       exportQuality: '1080p',
       hasWatermark: false,
       storageType: 'cloud',
-      cloudProjectsLimit: 5,
+      cloudProjectsLimit: 10,
       maxAudioTracks: 3,
       assetsLibrarySize: 500,
       customFonts: 50,
@@ -68,11 +68,11 @@ export const pricingData: SubscriptionPlan[] = [
   {
     id: 'pro',
     title: 'Pro',
-    description: 'Professionnel - Pour les créateurs établis',
+    description: 'Professionnel - Vidéos illimitées',
     childLimit: 3,
     prices: {
-      monthly: 39,
-      yearly: 390
+      monthly: 9,
+      yearly: 90
     },
     stripeIds: {
       monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
@@ -88,47 +88,12 @@ export const pricingData: SubscriptionPlan[] = [
       maxAudioTracks: -1, // unlimited
       assetsLibrarySize: 2000,
       customFonts: -1, // unlimited
-      hasAIVoice: true,
-      hasAIScriptGenerator: true,
-      hasAIImageGenerator: true,
-      aiVideoLimit: 30, // 30 AI videos per month
+      hasAIVoice: false, // AI features are add-ons
+      hasAIScriptGenerator: false,
+      hasAIImageGenerator: false,
+      aiVideoLimit: 0, // AI features require add-on
       maxCollaborators: 3,
       supportLevel: 'priority_24h',
-      hasTemplates: true,
-      hasBranding: true,
-      hasAPI: false
-    }
-  },
-  {
-    id: 'pro_plus',
-    title: 'Pro Plus',
-    description: 'Avancé - Production intensive avec musique IA',
-    childLimit: 5,
-    prices: {
-      monthly: 59,
-      yearly: 590
-    },
-    stripeIds: {
-      monthly: process.env.STRIPE_PRO_PLUS_MONTHLY_PRICE_ID || '',
-      yearly: process.env.STRIPE_PRO_PLUS_YEARLY_PRICE_ID || ''
-    },
-    features: {
-      maxScenes: -1, // unlimited
-      maxDuration: -1, // unlimited
-      exportQuality: '4k',
-      hasWatermark: false,
-      storageType: 'cloud',
-      cloudProjectsLimit: -1, // unlimited
-      maxAudioTracks: -1, // unlimited
-      assetsLibrarySize: 5000,
-      customFonts: -1, // unlimited
-      hasAIVoice: true,
-      hasAIScriptGenerator: true,
-      hasAIImageGenerator: true,
-      hasAIMusic: true,
-      aiVideoLimit: 100, // 100 AI videos per month
-      maxCollaborators: 5,
-      supportLevel: 'priority_12h',
       hasTemplates: true,
       hasBranding: true,
       hasAPI: false
@@ -140,8 +105,8 @@ export const pricingData: SubscriptionPlan[] = [
     description: 'Business - Solutions sur-mesure',
     childLimit: -1, // unlimited
     prices: {
-      monthly: 149,
-      yearly: 1490
+      monthly: 49,
+      yearly: 490
     },
     stripeIds: {
       monthly: process.env.STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || '',
@@ -157,11 +122,11 @@ export const pricingData: SubscriptionPlan[] = [
       maxAudioTracks: -1, // unlimited
       assetsLibrarySize: -1, // unlimited
       customFonts: -1, // unlimited
-      hasAIVoice: true,
-      hasAIScriptGenerator: true,
-      hasAIImageGenerator: true,
-      hasAIMusic: true,
-      aiVideoLimit: 250, // 250 AI videos per month
+      hasAIVoice: false, // AI features optional via API keys
+      hasAIScriptGenerator: false,
+      hasAIImageGenerator: false,
+      hasAIMusic: false,
+      aiVideoLimit: 0,
       maxCollaborators: -1, // unlimited
       supportLevel: 'premium_4h',
       hasTemplates: true,
