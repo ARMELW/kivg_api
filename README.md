@@ -185,10 +185,30 @@ docs(readme): mettre à jour l'installation
 
 ## API Documentation 📚
 
+### Documentation Interactive
+
 La documentation API est disponible sur :
-- Swagger UI : http://localhost:3000/docs
-- OpenAPI JSON : http://localhost:3000/swagger
-- Better Auth Swagger UI: http://localhost:3000/api/auth/reference
+- **Swagger UI**: http://localhost:3000/docs
+- **OpenAPI JSON**: http://localhost:3000/swagger
+- **Better Auth Swagger UI**: http://localhost:3000/api/auth/reference
+
+### Guide pour le Frontend
+
+**🚀 Pour l'intégration frontend, consultez le [Guide Complet de l'API Frontend](./FRONTEND_API_GUIDE.md)** qui contient :
+
+- ✅ Exemples de code TypeScript/JavaScript pour tous les endpoints
+- ✅ Payloads de requête et formats de réponse détaillés
+- ✅ Gestion de l'authentification avec Better Auth
+- ✅ Exemples d'intégration React (hooks, composants)
+- ✅ Gestion des uploads de fichiers avec progress
+- ✅ Patterns de polling pour les exports vidéo
+- ✅ Bonnes pratiques (cache, retry, validation)
+- ✅ Exemples complets de workflows (création projet, génération vidéo)
+
+### Autres Documentations
+
+- [Architecture du Projet](./docs/architecture/index.md)
+- [API Overview](./API_DOCUMENTATION.md)
 
 ## Tests 🧪
 

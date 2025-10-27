@@ -2,17 +2,26 @@
 
 This API provides comprehensive endpoints for managing a whiteboard animation platform including assets, channels, projects, scenes, audio, templates, and video exports.
 
+## 📚 Documentation
+
+### Pour les Développeurs Frontend
+**Consultez le [Guide Complet de l'API Frontend](./FRONTEND_API_GUIDE.md)** pour:
+- Exemples de code TypeScript/JavaScript complets
+- Payloads et réponses détaillés pour chaque endpoint
+- Gestion de l'authentification
+- Exemples d'intégration React
+- Bonnes pratiques et patterns
+
+### Documentation Interactive
+- Swagger UI: `http://localhost:3000/docs`
+- OpenAPI Spec: `http://localhost:3000/swagger`
+
 ## Base URL
 
 ```
-http://localhost:3000/api
+Production: https://api.doodlio.com
+Development: http://localhost:3000
 ```
-
-## API Documentation
-
-Interactive API documentation is available at:
-- Swagger UI: `http://localhost:3000/docs`
-- OpenAPI Spec: `http://localhost:3000/swagger`
 
 ## Authentication
 
