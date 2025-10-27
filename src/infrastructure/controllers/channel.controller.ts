@@ -1,12 +1,15 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import type { Routes } from '@/domain/types'
+import { ChannelRepository } from '../repositories/channel.repository'
 
 export class ChannelController implements Routes {
   public controller: OpenAPIHono
+  private channelRepository: ChannelRepository
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.channelRepository = new ChannelRepository()
     this.initRoutes()
   }
 
@@ -55,10 +58,11 @@ export class ChannelController implements Routes {
 
           const body = await c.req.json()
 
-          const channel = {
-            id: crypto.randomUUID(),
+          const channel = await this.channelRepository.create({
             userId: user.id,
-            ...body,
+            name: body.name,
+            description: body.description,
+            youtubeUrl: body.youtubeUrl,
             brandKit: {
               logoUrl: null,
               colors: {
@@ -70,12 +74,8 @@ export class ChannelController implements Routes {
               outroVideoUrl: null,
               customFonts: null
             },
-            projectCount: 0,
-            totalVideosExported: 0,
-            status: 'active',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
+            status: 'active'
+          })
 
           return c.json({ success: true, data: channel }, 201)
         } catch {
@@ -116,7 +116,7 @@ export class ChannelController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -127,10 +127,17 @@ export class ChannelController implements Routes {
           const page = Number.parseInt(query.page || '1')
           const limit = Number.parseInt(query.limit || '10')
 
+          const result = await this.channelRepository.findAll({
+            userId: user.id,
+            skip: (page - 1) * limit,
+            limit,
+            status: query.status as 'active' | 'archived' | undefined
+          })
+
           return c.json({
             success: true,
-            data: [],
-            total: 0,
+            data: result.channels,
+            total: result.total,
             page,
             limit
           })
@@ -167,7 +174,7 @@ export class ChannelController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -176,9 +183,18 @@ export class ChannelController implements Routes {
 
           const { id } = c.req.param()
 
+          const channel = await this.channelRepository.findById(id)
+          if (!channel) {
+            return c.json({ success: false, error: 'Channel not found' }, 404)
+          }
+
+          if (channel.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
           return c.json({
             success: true,
-            data: { id, message: 'Channel would be returned here' }
+            data: channel
           })
         } catch {
           return c.json({ success: false, error: 'Failed to fetch channel' }, 400)
@@ -234,9 +250,20 @@ export class ChannelController implements Routes {
           const { id } = c.req.param()
           const body = await c.req.json()
 
+          const channel = await this.channelRepository.findById(id)
+          if (!channel) {
+            return c.json({ success: false, error: 'Channel not found' }, 404)
+          }
+
+          if (channel.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
+          const updated = await this.channelRepository.update(id, body)
+
           return c.json({
             success: true,
-            data: { id, ...body, updatedAt: new Date().toISOString() }
+            data: updated
           })
         } catch {
           return c.json({ success: false, error: 'Failed to update channel' }, 400)
@@ -272,7 +299,7 @@ export class ChannelController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -281,10 +308,21 @@ export class ChannelController implements Routes {
 
           const { id } = c.req.param()
 
+          const channel = await this.channelRepository.findById(id)
+          if (!channel) {
+            return c.json({ success: false, error: 'Channel not found' }, 404)
+          }
+
+          if (channel.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
+          const archived = await this.channelRepository.archive(id)
+
           return c.json({
             success: true,
-            id,
-            status: 'archived'
+            id: archived.id,
+            status: archived.status
           })
         } catch {
           return c.json({ success: false, error: 'Failed to archive channel' }, 400)
@@ -319,7 +357,7 @@ export class ChannelController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -328,19 +366,30 @@ export class ChannelController implements Routes {
 
           const { id } = c.req.param()
 
+          const channel = await this.channelRepository.findById(id)
+          if (!channel) {
+            return c.json({ success: false, error: 'Channel not found' }, 404)
+          }
+
+          if (channel.userId !== user.id) {
+            return c.json({ success: false, error: 'Unauthorized' }, 403)
+          }
+
+          const stats = await this.channelRepository.getStats(id)
+
           return c.json({
             success: true,
             data: {
               channelId: id,
-              totalProjects: 0,
+              totalProjects: stats.projectCount,
               projectsByStatus: {
-                draft: 0,
-                inProgress: 0,
-                completed: 0
+                draft: 0, // Can be enhanced based on active/completed stats
+                inProgress: stats.activeProjects,
+                completed: stats.completedProjects
               },
-              totalVideosExported: 0,
-              totalDurationMinutes: 0,
-              lastActivity: new Date().toISOString()
+              totalVideosExported: stats.totalVideosExported,
+              totalDurationMinutes: 0, // Can be enhanced if needed
+              lastActivity: channel.updatedAt
             }
           })
         } catch {

@@ -1,12 +1,15 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import type { Routes } from '@/domain/types'
+import { TemplateRepository } from '../repositories/template.repository'
 
 export class TemplateController implements Routes {
   public controller: OpenAPIHono
+  private templateRepository: TemplateRepository
 
   constructor() {
     this.controller = new OpenAPIHono()
+    this.templateRepository = new TemplateRepository()
     this.initRoutes()
   }
 
@@ -68,15 +71,18 @@ export class TemplateController implements Routes {
 
           const body = await c.req.json()
 
-          const template = {
-            id: crypto.randomUUID(),
-            ...body,
-            rating: { average: 0, count: 0 },
-            popularity: 0,
-            version: '1.0.0',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
+          const template = await this.templateRepository.create({
+            name: body.name,
+            description: body.description,
+            type: body.type,
+            style: body.style,
+            tags: body.tags || [],
+            thumbnail: body.thumbnail,
+            previewAnimation: undefined,
+            metadata: body.metadata,
+            sceneData: body.sceneData,
+            version: '1.0.0'
+          })
 
           return c.json({ success: true, data: template }, 201)
         } catch {
@@ -122,7 +128,7 @@ export class TemplateController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -133,10 +139,20 @@ export class TemplateController implements Routes {
           const page = Number.parseInt(query.page || '1')
           const limit = Number.parseInt(query.limit || '20')
 
+          const result = await this.templateRepository.findAll({
+            skip: (page - 1) * limit,
+            limit,
+            type: query.type,
+            style: query.style,
+            search: query.search,
+            sortBy: query.sortByPopularity === 'true' ? 'popularity' : 'createdAt',
+            sortOrder: 'desc'
+          })
+
           return c.json({
             success: true,
-            data: [],
-            total: 0,
+            data: result.templates,
+            total: result.total,
             page,
             limit
           })
@@ -173,7 +189,7 @@ export class TemplateController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -182,9 +198,17 @@ export class TemplateController implements Routes {
 
           const { id } = c.req.param()
 
+          const template = await this.templateRepository.findById(id)
+          if (!template) {
+            return c.json({ success: false, error: 'Template not found' }, 404)
+          }
+
+          // Increment popularity when a template is viewed
+          await this.templateRepository.incrementPopularity(id)
+
           return c.json({
             success: true,
-            data: { id, message: 'Template would be returned here' }
+            data: template
           })
         } catch {
           return c.json({ success: false, error: 'Failed to fetch template' }, 400)
@@ -220,7 +244,7 @@ export class TemplateController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -229,9 +253,14 @@ export class TemplateController implements Routes {
 
           const { id } = c.req.param()
 
+          const template = await this.templateRepository.findById(id)
+          if (!template) {
+            return c.json({ success: false, error: 'Template not found' }, 404)
+          }
+
           return c.json({
-            version: '1.0.0',
-            template: { id, message: 'Template data would be here' },
+            version: template.version,
+            template,
             exportedAt: new Date().toISOString()
           })
         } catch {
@@ -325,7 +354,7 @@ export class TemplateController implements Routes {
           }
         }
       }),
-      (c: any) => {
+      async (c: any) => {
         try {
           const user = c.get('user')
           if (!user) {
@@ -333,6 +362,13 @@ export class TemplateController implements Routes {
           }
 
           const { id } = c.req.param()
+
+          const template = await this.templateRepository.findById(id)
+          if (!template) {
+            return c.json({ success: false, error: 'Template not found' }, 404)
+          }
+
+          await this.templateRepository.delete(id)
 
           return c.json({
             success: true,
