@@ -15,6 +15,9 @@ export const users = pgTable('users', {
   banExpires: timestamp('ban_expires'),
   isAdmin: boolean('is_admin').notNull().default(false),
   subscriptionPlan: text('subscription_plan').notNull().default('free'),
+  // API access control
+  hasApiAccess: boolean('has_api_access').notNull().default(false),
+  useOwnApiKeys: boolean('use_own_api_keys').notNull().default(false),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').notNull()
 })
@@ -381,6 +384,26 @@ export const aiUsage = pgTable('ai_usage', {
   imageGenerationCount: integer('image_generation_count').notNull().default(0),
   voiceGenerationCount: integer('voice_generation_count').notNull().default(0),
   musicGenerationCount: integer('music_generation_count').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
+// User API Keys table - stores encrypted API keys for external services
+export const userApiKeys = pgTable('user_api_keys', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(), // 'openai', 'elevenlabs', 'mubert', 'minimax', 'gemini'
+  encryptedApiKey: text('encrypted_api_key').notNull(), // Encrypted API key
+  isActive: boolean('is_active').notNull().default(true),
+  lastValidated: timestamp('last_validated'),
+  validationStatus: text('validation_status'), // 'valid', 'invalid', 'pending'
+  metadata: jsonb('metadata').$type<{
+    keyName?: string
+    addedBy?: string
+    lastUsed?: string
+  }>(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 })

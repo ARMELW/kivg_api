@@ -10,7 +10,8 @@ import {
   ProjectController,
   SceneController,
   TemplateController,
-  UserController
+  UserController,
+  UserApiKeysController
 } from './infrastructure/controllers'
 import { AIController } from './infrastructure/controllers/ai.controller'
 import { FontController } from './infrastructure/controllers/font.controller'
@@ -19,6 +20,7 @@ import { UploadController } from './infrastructure/controllers/upload.controller
 
 const app = new App([
   new UserController(),
+  new UserApiKeysController(),
   new PermissionController(),
   new PricingController(),
   new UploadController(),
