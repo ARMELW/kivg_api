@@ -2,7 +2,15 @@
 
 ## Overview
 
-The Doodlio API implements a comprehensive subscription system with 4 tiers, feature-based limits, and Stripe integration. The system follows a hexagonal architecture pattern with clear separation between domain, application, and infrastructure layers.
+The Doodlio API implements a flexible subscription system with 4 tiers and optional Bring Your Own Keys (BYOK) support. The system follows a hexagonal architecture pattern with clear separation between domain, application, and infrastructure layers.
+
+## New Pricing Model (2025)
+
+### Core Philosophy
+- **Base subscription**: Pay for video creation capabilities (duration, quality, storage)
+- **AI features**: Optional - either buy platform credits OR bring your own API keys
+- **BYOK**: Use your own API keys with any plan (even Free!) - no monthly AI limits
+- **Flexibility**: Choose what works best for your budget and usage
 
 ## Subscription Plans
 
@@ -10,8 +18,8 @@ The Doodlio API implements a comprehensive subscription system with 4 tiers, fea
 **Price**: €0/month (Always free)
 
 **Features**:
-- Max 3 scenes per project
-- Video duration up to 1 minute
+- Unlimited 1-minute videos
+- Unlimited scenes per project
 - 720p export quality
 - Watermark on exports
 - Local storage only
@@ -19,69 +27,54 @@ The Doodlio API implements a comprehensive subscription system with 4 tiers, fea
 - 50+ basic assets
 - 10 fonts
 - Forum support
+- **BYOK support**: Use your own API keys for unlimited AI features
 
-**Ideal for**: Beginners, students, testing
+**Ideal for**: Beginners, students, testing, hobbyists who want to explore AI with their own keys
 
 ### 2. Starter Plan
-**Price**: €9/month or €90/year (save €18)
+**Price**: €5/month or €50/year (save €10)
 
 **Features**:
-- Max 10 scenes per project
-- Video duration up to 5 minutes
+- Unlimited 5-minute videos
+- Unlimited scenes per project
 - 1080p HD export (no watermark)
-- Cloud storage (5 projects)
+- Cloud storage (10 projects)
 - 3 audio tracks
 - 500+ assets
 - 50+ premium fonts
 - Email support (48h response)
 - YouTube thumbnail creator
+- **BYOK support**: Use your own API keys for unlimited AI features
 
 **Ideal for**: Content creators, YouTubers, solo entrepreneurs
 
 ### 3. Pro Plan
-**Price**: €39/month or €390/year (save €78)
+**Price**: €9/month or €90/year (save €18)
 
 **Features**:
-- **30 AI videos/month** (script + voice + images)
+- Unlimited video duration
 - Unlimited scenes
-- Unlimited duration
 - 4K Ultra HD export
 - Unlimited cloud storage
 - Unlimited audio tracks
 - 2000+ assets
 - All fonts
-- AI voice synthesis (ElevenLabs or MiniMax)
-- AI script generator (Gemini)
-- Direct image generation (DALL-E 3)
 - Collaboration (3 members)
 - Priority support (24h response)
 - Professional templates
-- **Additional AI videos: €1.50 each**
+- **BYOK support**: Use your own API keys for unlimited AI features
 
-**Ideal for**: Content creators, established YouTubers, professional trainers
+**AI Add-on Options**:
+- Platform credits available for purchase (optional)
+- Or use your own API keys (BYOK) for free
 
-### 4. Pro Plus Plan
-**Price**: €59/month or €590/year (save €118) - NEW!
+**Ideal for**: Professional content creators, established YouTubers, trainers
+
+### 4. Enterprise Plan
+**Price**: €49/month or €490/year (save €98)
 
 **Features**:
-- **100 AI videos/month** (script + voice + images + music)
 - All Pro features
-- AI music generation (Mubert)
-- Priority AI processing
-- 5000+ assets
-- Collaboration (5 members)
-- Priority support (12h response)
-- Advanced templates
-- **Additional AI videos: €1.00 each**
-
-**Ideal for**: High-volume content creators, agencies, video production teams
-
-### 5. Enterprise Plan
-**Price**: From €149/month or €1,490/year (save €298)
-
-**Features**:
-- **250 AI videos/month** with priority processing
-- All Pro Plus features
 - Unlimited team members
 - SSO (Single Sign-On)
 - Custom branding
@@ -91,15 +84,76 @@ The Doodlio API implements a comprehensive subscription system with 4 tiers, fea
 - On-site training
 - Custom templates
 - Unlimited assets
-- **Additional AI videos: €0.75 each**
+- Priority processing
+- **BYOK support**: Use your own API keys or platform credits
 
 **Ideal for**: Large companies, agencies, educational institutions
+
+## Bring Your Own Keys (BYOK)
+
+### What is BYOK?
+
+BYOK allows you to use your own API keys from AI providers instead of purchasing platform credits. This gives you:
+
+- **Cost Control**: Pay directly to providers based on actual usage
+- **No Monthly Limits**: Use AI features as much as you need
+- **Flexibility**: Choose which providers to use
+- **Works with Any Plan**: Even Free plan users can use AI with their own keys!
+
+### Supported Providers
+
+1. **OpenAI** - Image generation (DALL-E 3)
+2. **ElevenLabs** - Voice synthesis (high quality)
+3. **Google Gemini** - Script generation & image generation
+4. **MiniMax** - Voice synthesis (cheaper alternative)
+5. **Mubert** - Music generation
+
+### How to Use BYOK
+
+1. Obtain API keys from the providers you want to use
+2. Add them to your Doodlio account via Settings > API Keys
+3. Enable "Use My Own API Keys" toggle
+4. Start using AI features with no monthly limits!
+
+See [BYOK_GUIDE.md](./BYOK_GUIDE.md) for detailed instructions.
+
+## Cost Comparison
+
+### Traditional Model (Old Pricing)
+- Pro: €39/month for 30 AI videos
+- Pro Plus: €59/month for 100 AI videos
+- Enterprise: €149/month for 250 AI videos
+
+### New Flexible Model
+
+**Option 1: Base Subscription Only (No AI)**
+- Free: €0/month
+- Starter: €5/month
+- Pro: €9/month
+- Enterprise: €49/month
+
+**Option 2: Base + BYOK**
+- Any plan + your own API keys
+- Pay providers directly for usage
+- No monthly AI limits
+- Example: Pro plan (€9) + ~€0.37 per AI video = Total control
+
+**Option 3: Base + Platform Credits (Coming Soon)**
+- Purchase AI credits as needed
+- Pay-as-you-go pricing
+- No commitment
 
 ## Environment Configuration
 
 Add these variables to your `.env` file:
 
 ```env
+# Database
+DATABASE_URL=postgresql://postgres:password@localhost:5432/doodlio_db?search_path=public
+
+# Encryption (for storing user API keys securely)
+ENCRYPTION_KEY=your-secure-32-byte-encryption-key-change-in-production
+
 # OAuth Configuration
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
@@ -111,23 +165,26 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
-# Stripe Price IDs
+# Stripe Price IDs (Updated for new pricing)
 STRIPE_STARTER_MONTHLY_PRICE_ID=price_xxx
 STRIPE_STARTER_YEARLY_PRICE_ID=price_xxx
 STRIPE_PRO_MONTHLY_PRICE_ID=price_xxx
 STRIPE_PRO_YEARLY_PRICE_ID=price_xxx
-STRIPE_PRO_PLUS_MONTHLY_PRICE_ID=price_xxx
-STRIPE_PRO_PLUS_YEARLY_PRICE_ID=price_xxx
 STRIPE_ENTERPRISE_MONTHLY_PRICE_ID=price_xxx
 STRIPE_ENTERPRISE_YEARLY_PRICE_ID=price_xxx
 
-# AI Services
+# AI Services (Platform Keys - Optional if users use BYOK)
 GEMINI_API_KEY=your_gemini_api_key
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
 OPENAI_API_KEY=your_openai_api_key
 MINIMAX_API_KEY=your_minimax_api_key
 MUBERT_API_KEY=your_mubert_api_key
 ```
+
+**Important**: 
+- `ENCRYPTION_KEY` must be exactly 32 bytes for AES-256 encryption
+- AI service keys are optional if all users use BYOK
+- Generate a secure random key for `ENCRYPTION_KEY` in production
 
 ## Database Setup
 
@@ -254,6 +311,92 @@ POST /api/v1/subscription/change
 #### Cancel Subscription
 ```
 POST /api/v1/subscription/cancel
+```
+
+### User API Keys Endpoints (BYOK)
+
+#### Save/Update API Key
+```
+POST /v1/user/api-keys
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "provider": "openai|elevenlabs|gemini|minimax|mubert",
+  "apiKey": "your-api-key",
+  "keyName": "Optional friendly name"
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "provider": "openai",
+    "maskedKey": "****abcd",
+    "isActive": true
+  }
+}
+```
+
+#### Get All User API Keys
+```
+GET /v1/user/api-keys
+Authorization: Bearer {token}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "provider": "openai",
+      "maskedKey": "****abcd",
+      "isActive": true,
+      "lastValidated": "2025-10-27T10:00:00Z",
+      "validationStatus": "valid",
+      "keyName": "My OpenAI Key",
+      "createdAt": "2025-10-20T10:00:00Z",
+      "updatedAt": "2025-10-27T10:00:00Z"
+    }
+  ]
+}
+```
+
+#### Validate API Key
+```
+POST /v1/user/api-keys/{provider}/validate
+Authorization: Bearer {token}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "provider": "openai",
+    "isValid": true,
+    "message": "OpenAI API key is valid"
+  }
+}
+```
+
+#### Delete API Key
+```
+DELETE /v1/user/api-keys/{provider}
+Authorization: Bearer {token}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "message": "API key deleted successfully"
+}
 ```
 
 ## Feature Limit Enforcement
