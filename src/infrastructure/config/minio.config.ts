@@ -20,7 +20,8 @@ export const MINIO_BUCKETS = {
   ASSETS: 'assets',
   AUDIO: 'audio',
   EXPORTS: 'exports',
-  THUMBNAILS: 'thumbnails'
+  THUMBNAILS: 'thumbnails',
+  GENERAL: 'general'
 } as const
 
 // Initialize buckets
