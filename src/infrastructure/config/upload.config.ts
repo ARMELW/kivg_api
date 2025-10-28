@@ -13,14 +13,15 @@ export interface UploadResponse {
  * Map folder paths to MinIO buckets
  */
 function getBucketFromFolder(folder: string): string {
+  // Check for thumbnails first (before assets check)
+  if (folder.includes('thumbnail')) {
+    return MINIO_BUCKETS.THUMBNAILS
+  }
   if (folder.startsWith('audio')) {
     return MINIO_BUCKETS.AUDIO
   }
   if (folder.startsWith('assets')) {
     return MINIO_BUCKETS.ASSETS
-  }
-  if (folder.includes('thumbnail')) {
-    return MINIO_BUCKETS.THUMBNAILS
   }
   if (folder.startsWith('exports')) {
     return MINIO_BUCKETS.EXPORTS
@@ -118,7 +119,11 @@ export const deleteFile = async (publicId: string): Promise<void> => {
     const objectName = parts.slice(1).join('/')
 
     await minioClient.removeObject(bucket, objectName)
-  } catch (error) {
+  } catch (error: any) {
+    // Re-throw validation errors as-is
+    if (error.message === 'Invalid public_id format') {
+      throw error
+    }
     console.error('Delete error:', error)
     throw new Error('Failed to delete file')
   }
