@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { getStorageProvider, STORAGE_BUCKETS } from '@/infrastructure/storage/storage.factory'
+import { ensureStorageInitialized, getStorageProvider, STORAGE_BUCKETS } from '@/infrastructure/storage/storage.factory'
 import type { Buffer } from 'node:buffer'
 
 export interface UploadResponse {
@@ -58,6 +58,9 @@ function getResourceType(buffer: Buffer): string {
  */
 export const uploadFile = async (file: Buffer, folder: string): Promise<UploadResponse> => {
   try {
+    // Ensure storage is initialized before uploading
+    await ensureStorageInitialized()
+
     const storageProvider = getStorageProvider()
     const bucket = getBucketFromFolder(folder)
     const id = randomUUID()

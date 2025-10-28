@@ -49,6 +49,16 @@ export function createStorageProvider(): FileStorageProvider {
 let storageProviderInstance: FileStorageProvider | null = null
 
 /**
+ * Flag to track if storage provider has been initialized
+ */
+let isInitialized = false
+
+/**
+ * Promise to track ongoing initialization
+ */
+let initializationPromise: Promise<void> | null = null
+
+/**
  * Get the storage provider instance (singleton)
  */
 export function getStorageProvider(): FileStorageProvider {
@@ -62,12 +72,39 @@ export function getStorageProvider(): FileStorageProvider {
  * Initialize storage provider
  */
 export async function initializeStorageProvider(): Promise<void> {
-  const provider = getStorageProvider()
-  if (provider.isAvailable()) {
-    await provider.initialize()
-  } else {
-    throw new Error('Storage provider is not available')
+  // If already initialized, return immediately
+  if (isInitialized) {
+    return
   }
+
+  // If initialization is in progress, wait for it
+  if (initializationPromise) {
+    return initializationPromise
+  }
+
+  // Start initialization
+  initializationPromise = (async () => {
+    const provider = getStorageProvider()
+    if (provider.isAvailable()) {
+      await provider.initialize()
+      isInitialized = true
+    } else {
+      throw new Error('Storage provider is not available')
+    }
+  })()
+
+  try {
+    await initializationPromise
+  } finally {
+    initializationPromise = null
+  }
+}
+
+/**
+ * Ensure storage provider is initialized before use
+ */
+export async function ensureStorageInitialized(): Promise<void> {
+  await initializeStorageProvider()
 }
 
 /**
@@ -75,4 +112,6 @@ export async function initializeStorageProvider(): Promise<void> {
  */
 export function resetStorageProvider(): void {
   storageProviderInstance = null
+  isInitialized = false
+  initializationPromise = null
 }

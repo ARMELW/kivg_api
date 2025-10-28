@@ -16,6 +16,7 @@ vi.mock('@/infrastructure/storage/storage.factory', () => {
 
   return {
     getStorageProvider: vi.fn(() => mockStorageProvider),
+    ensureStorageInitialized: vi.fn(() => Promise.resolve()),
     STORAGE_BUCKETS: {
       ASSETS: 'assets',
       AUDIO: 'audio',
