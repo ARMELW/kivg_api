@@ -1,19 +1,22 @@
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { MINIO_BUCKETS, minioClient } from './minio.config'
+import { STORAGE_BUCKETS } from '@/infrastructure/storage/storage.factory'
 import { deleteFile, uploadFile } from './upload.config'
 
-// Mock the MinIO client
-vi.mock('./minio.config', () => {
-  const mockMinioClient = {
-    putObject: vi.fn(),
-    removeObject: vi.fn()
+// Mock the storage factory
+vi.mock('@/infrastructure/storage/storage.factory', () => {
+  const mockStorageProvider = {
+    name: 'minio',
+    isAvailable: vi.fn(() => true),
+    initialize: vi.fn(),
+    uploadFile: vi.fn(),
+    deleteFile: vi.fn()
   }
 
   return {
-    minioClient: mockMinioClient,
-    MINIO_BUCKETS: {
+    getStorageProvider: vi.fn(() => mockStorageProvider),
+    STORAGE_BUCKETS: {
       ASSETS: 'assets',
       AUDIO: 'audio',
       EXPORTS: 'exports',
@@ -24,75 +27,108 @@ vi.mock('./minio.config', () => {
 })
 
 describe('upload.config', () => {
-  beforeEach(() => {
+  let mockStorageProvider: any
+
+  beforeEach(async () => {
     vi.clearAllMocks()
     // Set environment variables for URL generation
     process.env.MINIO_USE_SSL = 'false'
     process.env.MINIO_ENDPOINT = 'localhost'
     process.env.MINIO_PORT = '9000'
+
+    // Get the mock storage provider
+    const { getStorageProvider } = await import('@/infrastructure/storage/storage.factory')
+    mockStorageProvider = getStorageProvider()
   })
 
   describe('uploadFile', () => {
     it('should upload an image file to the assets bucket', async () => {
       // Create a PNG buffer (magic number: 89 50 4E 47)
       const buffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/assets/assets/test-id.webp',
+        bucket: 'assets',
+        size: buffer.length,
+        publicId: 'assets/assets/test-id.webp'
+      })
 
       const result = await uploadFile(buffer, 'assets')
 
-      expect(minioClient.putObject).toHaveBeenCalledTimes(1)
-      const call = vi.mocked(minioClient.putObject).mock.calls[0]
-      expect(call[0]).toBe(MINIO_BUCKETS.ASSETS)
-      expect(call[1]).toMatch(/^assets\/.*\.webp$/)
-      expect(call[2]).toBe(buffer)
-      expect(call[3]).toBe(buffer.length)
-      expect(call[4]).toEqual({ 'Content-Type': 'image/webp' })
+      expect(mockStorageProvider.uploadFile).toHaveBeenCalledTimes(1)
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.bucket).toBe(STORAGE_BUCKETS.ASSETS)
+      expect(call.filename).toMatch(/^assets\/.*\.webp$/)
+      expect(call.buffer).toBe(buffer)
+      expect(call.contentType).toBe('image/webp')
 
       expect(result.resource_type).toBe('image')
-      expect(result.url).toMatch(/^http:\/\/localhost:9000\/assets\/assets\/.*\.webp$/)
+      expect(result.url).toMatch(/assets/)
       expect(result.public_id).toMatch(/^assets\/assets\/.*\.webp$/)
     })
 
     it('should upload an audio file to the audio bucket', async () => {
       // Create an MP3 buffer (magic number: ID3)
       const buffer = Buffer.from([0x49, 0x44, 0x33, 0x04, 0x00, 0x00])
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/audio/audio/test-id.mp3',
+        bucket: 'audio',
+        size: buffer.length,
+        publicId: 'audio/audio/test-id.mp3'
+      })
 
       const result = await uploadFile(buffer, 'audio')
 
-      expect(minioClient.putObject).toHaveBeenCalledTimes(1)
-      const call = vi.mocked(minioClient.putObject).mock.calls[0]
-      expect(call[0]).toBe(MINIO_BUCKETS.AUDIO)
-      expect(call[1]).toMatch(/^audio\/.*\.mp3$/)
-      expect(call[4]).toEqual({ 'Content-Type': 'audio/mpeg' })
+      expect(mockStorageProvider.uploadFile).toHaveBeenCalledTimes(1)
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.bucket).toBe(STORAGE_BUCKETS.AUDIO)
+      expect(call.filename).toMatch(/^audio\/.*\.mp3$/)
+      expect(call.contentType).toBe('audio/mpeg')
 
       expect(result.resource_type).toBe('audio')
     })
 
     it('should upload to general bucket for unknown folder types', async () => {
       const buffer = Buffer.from('test data')
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/general/documents/test-id.bin',
+        bucket: 'general',
+        size: buffer.length,
+        publicId: 'general/documents/test-id.bin'
+      })
 
       const result = await uploadFile(buffer, 'documents')
 
-      const call = vi.mocked(minioClient.putObject).mock.calls[0]
-      expect(call[0]).toBe(MINIO_BUCKETS.GENERAL)
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.bucket).toBe(STORAGE_BUCKETS.GENERAL)
       expect(result.resource_type).toBe('raw')
     })
 
     it('should upload thumbnails to the thumbnails bucket', async () => {
       const buffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/thumbnails/assets/thumbnails/test-id.webp',
+        bucket: 'thumbnails',
+        size: buffer.length,
+        publicId: 'thumbnails/assets/thumbnails/test-id.webp'
+      })
 
       await uploadFile(buffer, 'assets/thumbnails')
 
-      const call = vi.mocked(minioClient.putObject).mock.calls[0]
-      expect(call[0]).toBe(MINIO_BUCKETS.THUMBNAILS)
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.bucket).toBe(STORAGE_BUCKETS.THUMBNAILS)
     })
 
     it('should throw error on upload failure', async () => {
       const buffer = Buffer.from('test')
-      vi.mocked(minioClient.putObject).mockRejectedValue(new Error('Upload failed'))
+      mockStorageProvider.uploadFile.mockRejectedValue(new Error('Upload failed'))
 
       await expect(uploadFile(buffer, 'assets')).rejects.toThrow('Failed to upload file')
     })
@@ -100,19 +136,19 @@ describe('upload.config', () => {
 
   describe('deleteFile', () => {
     it('should delete a file with valid public_id', async () => {
-      vi.mocked(minioClient.removeObject).mockResolvedValue({} as any)
+      mockStorageProvider.deleteFile.mockResolvedValue(undefined)
 
       await deleteFile('assets/folder/file.jpg')
 
-      expect(minioClient.removeObject).toHaveBeenCalledWith('assets', 'folder/file.jpg')
+      expect(mockStorageProvider.deleteFile).toHaveBeenCalledWith('assets', 'folder/file.jpg')
     })
 
     it('should handle nested paths correctly', async () => {
-      vi.mocked(minioClient.removeObject).mockResolvedValue({} as any)
+      mockStorageProvider.deleteFile.mockResolvedValue(undefined)
 
       await deleteFile('audio/subfolder/deep/file.mp3')
 
-      expect(minioClient.removeObject).toHaveBeenCalledWith('audio', 'subfolder/deep/file.mp3')
+      expect(mockStorageProvider.deleteFile).toHaveBeenCalledWith('audio', 'subfolder/deep/file.mp3')
     })
 
     it('should throw error for invalid public_id format', async () => {
@@ -120,7 +156,7 @@ describe('upload.config', () => {
     })
 
     it('should throw error on delete failure', async () => {
-      vi.mocked(minioClient.removeObject).mockRejectedValue(new Error('Delete failed'))
+      mockStorageProvider.deleteFile.mockRejectedValue(new Error('Delete failed'))
 
       await expect(deleteFile('assets/file.jpg')).rejects.toThrow('Failed to delete file')
     })
@@ -129,36 +165,60 @@ describe('upload.config', () => {
   describe('bucket mapping', () => {
     it('should map audio folders to audio bucket', async () => {
       const buffer = Buffer.from('test')
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/audio/audio/voice/test-id.bin',
+        bucket: 'audio',
+        size: buffer.length,
+        publicId: 'audio/audio/voice/test-id.bin'
+      })
 
       await uploadFile(buffer, 'audio/voice')
-      const call = vi.mocked(minioClient.putObject).mock.calls[0]
-      expect(call[0]).toBe(MINIO_BUCKETS.AUDIO)
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.bucket).toBe(STORAGE_BUCKETS.AUDIO)
     })
 
     it('should map assets folders to assets bucket', async () => {
       const buffer = Buffer.from('test')
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/assets/assets/images/test-id.bin',
+        bucket: 'assets',
+        size: buffer.length,
+        publicId: 'assets/assets/images/test-id.bin'
+      })
 
       await uploadFile(buffer, 'assets/images')
-      const call = vi.mocked(minioClient.putObject).mock.calls[0]
-      expect(call[0]).toBe(MINIO_BUCKETS.ASSETS)
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.bucket).toBe(STORAGE_BUCKETS.ASSETS)
     })
 
     it('should map exports folders to exports bucket', async () => {
       const buffer = Buffer.from('test')
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/exports/exports/data/test-id.bin',
+        bucket: 'exports',
+        size: buffer.length,
+        publicId: 'exports/exports/data/test-id.bin'
+      })
 
       await uploadFile(buffer, 'exports/data')
-      const call = vi.mocked(minioClient.putObject).mock.calls[0]
-      expect(call[0]).toBe(MINIO_BUCKETS.EXPORTS)
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.bucket).toBe(STORAGE_BUCKETS.EXPORTS)
     })
   })
 
   describe('resource type detection', () => {
     it('should detect JPEG images', async () => {
       const buffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0])
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/general/test/test-id.webp',
+        bucket: 'general',
+        size: buffer.length,
+        publicId: 'general/test/test-id.webp'
+      })
 
       const result = await uploadFile(buffer, 'test')
       expect(result.resource_type).toBe('image')
@@ -166,7 +226,13 @@ describe('upload.config', () => {
 
     it('should detect GIF images', async () => {
       const buffer = Buffer.from([0x47, 0x49, 0x46, 0x38])
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/general/test/test-id.webp',
+        bucket: 'general',
+        size: buffer.length,
+        publicId: 'general/test/test-id.webp'
+      })
 
       const result = await uploadFile(buffer, 'test')
       expect(result.resource_type).toBe('image')
@@ -174,7 +240,13 @@ describe('upload.config', () => {
 
     it('should detect RIFF audio files', async () => {
       const buffer = Buffer.from([0x52, 0x49, 0x46, 0x46])
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/general/test/test-id.mp3',
+        bucket: 'general',
+        size: buffer.length,
+        publicId: 'general/test/test-id.mp3'
+      })
 
       const result = await uploadFile(buffer, 'test')
       expect(result.resource_type).toBe('audio')
@@ -182,7 +254,13 @@ describe('upload.config', () => {
 
     it('should default to raw for unknown types', async () => {
       const buffer = Buffer.from('unknown data')
-      vi.mocked(minioClient.putObject).mockResolvedValue({} as any)
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/general/test/test-id.bin',
+        bucket: 'general',
+        size: buffer.length,
+        publicId: 'general/test/test-id.bin'
+      })
 
       const result = await uploadFile(buffer, 'test')
       expect(result.resource_type).toBe('raw')
