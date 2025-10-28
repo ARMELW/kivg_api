@@ -4,6 +4,14 @@ import type { Routes } from '@/domain/types'
 import { PreviewRepository } from '../repositories/preview.repository'
 import { SceneRepository } from '../repositories/scene.repository'
 
+/**
+ * Preview Controller
+ *
+ * Handles scene preview generation requests.
+ *
+ * @see docs/PREVIEW_STRATEGY.md for comprehensive preview strategy documentation
+ * including URL generation, caching, resource management, and integration with whiteboard-cli.
+ */
 export class PreviewController implements Routes {
   public controller: OpenAPIHono
   private previewRepository: PreviewRepository

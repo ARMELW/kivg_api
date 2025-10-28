@@ -1431,6 +1431,8 @@ const listTemplates = async (params: ListTemplatesParams = {}) => {
 
 Exportation et génération de vidéos.
 
+> **📖 Note:** Pour une documentation complète sur la stratégie de prévisualisation, la génération d'URLs et l'optimisation des ressources, consultez le [Guide de Stratégie de Prévisualisation](./PREVIEW_STRATEGY.md).
+
 #### Exporter une Scène
 
 **Endpoint:** `POST /v1/export/scene/{id}`

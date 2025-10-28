@@ -308,6 +308,7 @@ En plus des conventions de commit, nous suivons ces pratiques :
 - [**AI Pricing Strategy**](./AI_PRICING_STRATEGY.md) : Stratégie de tarification et coûts IA
 - [**Subscription System**](./SUBSCRIPTION_SYSTEM.md) : Système d'abonnement et BYOK
 - [**API Documentation**](./API_DOCUMENTATION.md) : Documentation API détaillée
+- [**Preview Strategy**](./docs/PREVIEW_STRATEGY.md) : Stratégie complète de prévisualisation et génération d'URLs
 - [**Security Checklist**](./SECURITY_CHECKLIST.md) : Guide de sécurité
 
 ## Contribution 🤝
