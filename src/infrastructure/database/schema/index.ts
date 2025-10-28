@@ -5,6 +5,7 @@ import {
   audioFiles,
   channels,
   exports,
+  previews,
   projects,
   roles,
   scenes,
@@ -66,7 +67,8 @@ export const scenesRelations = relations(scenes, ({ one, many }) => ({
     fields: [scenes.projectId],
     references: [projects.id]
   }),
-  exports: many(exports)
+  exports: many(exports),
+  previews: many(previews)
 }))
 
 export const audioFilesRelations = relations(audioFiles, ({ one }) => ({
@@ -94,6 +96,17 @@ export const exportsRelations = relations(exports, ({ one }) => ({
   }),
   scene: one(scenes, {
     fields: [exports.sceneId],
+    references: [scenes.id]
+  })
+}))
+
+export const previewsRelations = relations(previews, ({ one }) => ({
+  user: one(users, {
+    fields: [previews.userId],
+    references: [users.id]
+  }),
+  scene: one(scenes, {
+    fields: [previews.sceneId],
     references: [scenes.id]
   })
 }))
