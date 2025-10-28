@@ -143,6 +143,7 @@ doodlio-api/
 
 - **Main Guide:** [FRONTEND_API_GUIDE.md](./FRONTEND_API_GUIDE.md)
 - **Quick Start:** [docs/FRONTEND_INTEGRATION.md](./docs/FRONTEND_INTEGRATION.md)
+- **Preview Strategy:** [docs/PREVIEW_STRATEGY.md](./PREVIEW_STRATEGY.md) - Comprehensive preview generation and URL strategy
 - **Interactive Docs:** http://localhost:3000/docs
 - **API Overview:** [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
 
