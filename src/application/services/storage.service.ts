@@ -1,4 +1,4 @@
-import { getStorageProvider, STORAGE_BUCKETS } from '@/infrastructure/storage/storage.factory'
+import { ensureStorageInitialized, getStorageProvider, STORAGE_BUCKETS } from '@/infrastructure/storage/storage.factory'
 import type { FileStorageProvider } from '@/domain/interfaces/storage.interface'
 import type { Buffer } from 'node:buffer'
 import type { Readable } from 'node:stream'
@@ -28,6 +28,9 @@ export class StorageService {
    */
   async uploadFile(buffer: Buffer, filename: string, options: UploadOptions): Promise<UploadResult> {
     try {
+      // Ensure storage is initialized before uploading
+      await ensureStorageInitialized()
+
       const bucket = STORAGE_BUCKETS[options.bucket]
 
       const result = await this.storageProvider.uploadFile({
@@ -55,6 +58,9 @@ export class StorageService {
    */
   async uploadStream(stream: Readable, filename: string, size: number, options: UploadOptions): Promise<UploadResult> {
     try {
+      // Ensure storage is initialized before uploading
+      await ensureStorageInitialized()
+
       const bucket = STORAGE_BUCKETS[options.bucket]
 
       const result = await this.storageProvider.uploadStream({
