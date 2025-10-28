@@ -14,7 +14,8 @@ export interface UploadResponse {
  */
 function getBucketFromFolder(folder: string): string {
   // Check for thumbnails first (before assets check)
-  if (folder.includes('thumbnail')) {
+  // More specific check to avoid false positives
+  if (folder.includes('/thumbnail') || folder.endsWith('thumbnails') || folder === 'thumbnails') {
     return MINIO_BUCKETS.THUMBNAILS
   }
   if (folder.startsWith('audio')) {
@@ -119,9 +120,9 @@ export const deleteFile = async (publicId: string): Promise<void> => {
     const objectName = parts.slice(1).join('/')
 
     await minioClient.removeObject(bucket, objectName)
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Re-throw validation errors as-is
-    if (error.message === 'Invalid public_id format') {
+    if (error instanceof Error && error.message === 'Invalid public_id format') {
       throw error
     }
     console.error('Delete error:', error)
