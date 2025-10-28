@@ -1,11 +1,10 @@
-import { Buffer } from 'node:buffer'
-import { randomUUID } from 'node:crypto'
-import process from 'node:process'
-import { MINIO_BUCKETS, minioClient } from '@/infrastructure/config/minio.config'
+import { getStorageProvider, STORAGE_BUCKETS } from '@/infrastructure/storage/storage.factory'
+import type { FileStorageProvider } from '@/domain/interfaces/storage.interface'
+import type { Buffer } from 'node:buffer'
 import type { Readable } from 'node:stream'
 
 export interface UploadOptions {
-  bucket: keyof typeof MINIO_BUCKETS
+  bucket: keyof typeof STORAGE_BUCKETS
   contentType: string
   metadata?: Record<string, string>
 }
@@ -18,30 +17,32 @@ export interface UploadResult {
 }
 
 export class StorageService {
+  private storageProvider: FileStorageProvider
+
+  constructor(storageProvider?: FileStorageProvider) {
+    this.storageProvider = storageProvider || getStorageProvider()
+  }
+
   /**
-   * Upload a file to MinIO
+   * Upload a file to storage
    */
   async uploadFile(buffer: Buffer, filename: string, options: UploadOptions): Promise<UploadResult> {
     try {
-      const bucket = MINIO_BUCKETS[options.bucket]
-      const id = randomUUID()
-      const extension = filename.split('.').pop() || 'bin'
-      const objectName = `${id}.${extension}`
+      const bucket = STORAGE_BUCKETS[options.bucket]
 
-      // Upload to MinIO
-      await minioClient.putObject(bucket, objectName, buffer, buffer.length, {
-        'Content-Type': options.contentType,
-        ...options.metadata
+      const result = await this.storageProvider.uploadFile({
+        buffer,
+        filename,
+        bucket,
+        contentType: options.contentType,
+        metadata: options.metadata
       })
 
-      // Generate URL
-      const url = await this.getFileUrl(bucket, objectName)
-
       return {
-        id,
-        url,
-        bucket,
-        size: buffer.length
+        id: result.id,
+        url: result.url,
+        bucket: result.bucket,
+        size: result.size
       }
     } catch (error) {
       console.error('File upload error:', error)
@@ -54,23 +55,22 @@ export class StorageService {
    */
   async uploadStream(stream: Readable, filename: string, size: number, options: UploadOptions): Promise<UploadResult> {
     try {
-      const bucket = MINIO_BUCKETS[options.bucket]
-      const id = randomUUID()
-      const extension = filename.split('.').pop() || 'bin'
-      const objectName = `${id}.${extension}`
+      const bucket = STORAGE_BUCKETS[options.bucket]
 
-      await minioClient.putObject(bucket, objectName, stream, size, {
-        'Content-Type': options.contentType,
-        ...options.metadata
+      const result = await this.storageProvider.uploadStream({
+        stream,
+        filename,
+        bucket,
+        size,
+        contentType: options.contentType,
+        metadata: options.metadata
       })
 
-      const url = await this.getFileUrl(bucket, objectName)
-
       return {
-        id,
-        url,
-        bucket,
-        size
+        id: result.id,
+        url: result.url,
+        bucket: result.bucket,
+        size: result.size
       }
     } catch (error) {
       console.error('Stream upload error:', error)
@@ -79,18 +79,12 @@ export class StorageService {
   }
 
   /**
-   * Download a file from MinIO
+   * Download a file from storage
    */
   async downloadFile(bucket: string, objectName: string): Promise<Buffer> {
     try {
-      const stream = await minioClient.getObject(bucket, objectName)
-      const chunks: Buffer[] = []
-
-      return new Promise((resolve, reject) => {
-        stream.on('data', (chunk) => chunks.push(chunk))
-        stream.on('end', () => resolve(Buffer.concat(chunks)))
-        stream.on('error', reject)
-      })
+      const result = await this.storageProvider.downloadFile(bucket, objectName)
+      return result.buffer
     } catch (error) {
       console.error('File download error:', error)
       throw new Error('Failed to download file')
@@ -98,11 +92,11 @@ export class StorageService {
   }
 
   /**
-   * Delete a file from MinIO
+   * Delete a file from storage
    */
   async deleteFile(bucket: string, objectName: string): Promise<void> {
     try {
-      await minioClient.removeObject(bucket, objectName)
+      await this.storageProvider.deleteFile(bucket, objectName)
     } catch (error) {
       console.error('File deletion error:', error)
       throw new Error('Failed to delete file')
@@ -114,7 +108,7 @@ export class StorageService {
    */
   async deleteFiles(bucket: string, objectNames: string[]): Promise<void> {
     try {
-      await minioClient.removeObjects(bucket, objectNames)
+      await this.storageProvider.deleteFiles(bucket, objectNames)
     } catch (error) {
       console.error('Multiple files deletion error:', error)
       throw new Error('Failed to delete files')
@@ -126,17 +120,7 @@ export class StorageService {
    */
   async getFileUrl(bucket: string, objectName: string, expiry = 7 * 24 * 60 * 60): Promise<string> {
     try {
-      // For public buckets (like exports), return direct URL
-      if (bucket === MINIO_BUCKETS.EXPORTS) {
-        // Use environment variables to construct URL
-        const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'
-        const endpoint = process.env.MINIO_ENDPOINT || 'localhost'
-        const port = process.env.MINIO_PORT || '9000'
-        return `${protocol}://${endpoint}:${port}/${bucket}/${objectName}`
-      }
-
-      // For private buckets, return presigned URL
-      return await minioClient.presignedGetObject(bucket, objectName, expiry)
+      return await this.storageProvider.getFileUrl(bucket, objectName, expiry)
     } catch (error) {
       console.error('URL generation error:', error)
       throw new Error('Failed to generate file URL')
@@ -148,8 +132,7 @@ export class StorageService {
    */
   async fileExists(bucket: string, objectName: string): Promise<boolean> {
     try {
-      await minioClient.statObject(bucket, objectName)
-      return true
+      return await this.storageProvider.fileExists(bucket, objectName)
     } catch {
       return false
     }
@@ -160,7 +143,7 @@ export class StorageService {
    */
   async getFileMetadata(bucket: string, objectName: string): Promise<any> {
     try {
-      return await minioClient.statObject(bucket, objectName)
+      return await this.storageProvider.getFileMetadata(bucket, objectName)
     } catch (error) {
       console.error('Metadata retrieval error:', error)
       throw new Error('Failed to get file metadata')
@@ -168,11 +151,11 @@ export class StorageService {
   }
 
   /**
-   * Copy file within MinIO
+   * Copy file within storage
    */
   async copyFile(sourceBucket: string, sourceObject: string, destBucket: string, destObject: string): Promise<void> {
     try {
-      await minioClient.copyObject(destBucket, destObject, `/${sourceBucket}/${sourceObject}`)
+      await this.storageProvider.copyFile(sourceBucket, sourceObject, destBucket, destObject)
     } catch (error) {
       console.error('File copy error:', error)
       throw new Error('Failed to copy file')
@@ -184,16 +167,7 @@ export class StorageService {
    */
   listFiles(bucket: string, prefix?: string): Promise<string[]> {
     try {
-      const stream = minioClient.listObjects(bucket, prefix, true)
-      const files: string[] = []
-
-      return new Promise((resolve, reject) => {
-        stream.on('data', (obj) => {
-          if (obj.name) files.push(obj.name)
-        })
-        stream.on('end', () => resolve(files))
-        stream.on('error', reject)
-      })
+      return this.storageProvider.listFiles(bucket, prefix)
     } catch (error) {
       console.error('File listing error:', error)
       throw new Error('Failed to list files')

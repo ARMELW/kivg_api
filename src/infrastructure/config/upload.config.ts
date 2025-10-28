@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import process from 'node:process'
-import { MINIO_BUCKETS, minioClient } from './minio.config'
+import { getStorageProvider, STORAGE_BUCKETS } from '@/infrastructure/storage/storage.factory'
 import type { Buffer } from 'node:buffer'
 
 export interface UploadResponse {
@@ -10,24 +9,24 @@ export interface UploadResponse {
 }
 
 /**
- * Map folder paths to MinIO buckets
+ * Map folder paths to storage buckets
  */
 function getBucketFromFolder(folder: string): string {
   // Check for thumbnails first (before assets check)
   // More specific check to avoid false positives
   if (folder.includes('/thumbnail') || folder.endsWith('thumbnails') || folder === 'thumbnails') {
-    return MINIO_BUCKETS.THUMBNAILS
+    return STORAGE_BUCKETS.THUMBNAILS
   }
   if (folder.startsWith('audio')) {
-    return MINIO_BUCKETS.AUDIO
+    return STORAGE_BUCKETS.AUDIO
   }
   if (folder.startsWith('assets')) {
-    return MINIO_BUCKETS.ASSETS
+    return STORAGE_BUCKETS.ASSETS
   }
   if (folder.startsWith('exports')) {
-    return MINIO_BUCKETS.EXPORTS
+    return STORAGE_BUCKETS.EXPORTS
   }
-  return MINIO_BUCKETS.GENERAL
+  return STORAGE_BUCKETS.GENERAL
 }
 
 /**
@@ -54,11 +53,12 @@ function getResourceType(buffer: Buffer): string {
 }
 
 /**
- * Upload a file to MinIO
+ * Upload a file to storage
  * Maintains compatibility with the original Cloudinary uploadFile signature
  */
 export const uploadFile = async (file: Buffer, folder: string): Promise<UploadResponse> => {
   try {
+    const storageProvider = getStorageProvider()
     const bucket = getBucketFromFolder(folder)
     const id = randomUUID()
     const resourceType = getResourceType(file)
@@ -71,7 +71,7 @@ export const uploadFile = async (file: Buffer, folder: string): Promise<UploadRe
       extension = 'mp3'
     }
 
-    const objectName = folder ? `${folder}/${id}.${extension}` : `${id}.${extension}`
+    const filename = folder ? `${folder}/${id}.${extension}` : `${id}.${extension}`
 
     // Determine content type
     let contentType = 'application/octet-stream'
@@ -81,20 +81,17 @@ export const uploadFile = async (file: Buffer, folder: string): Promise<UploadRe
       contentType = 'audio/mpeg'
     }
 
-    // Upload to MinIO
-    await minioClient.putObject(bucket, objectName, file, file.length, {
-      'Content-Type': contentType
+    // Upload using the storage provider
+    const result = await storageProvider.uploadFile({
+      buffer: file,
+      filename,
+      bucket,
+      contentType
     })
 
-    // Generate URL
-    const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'
-    const endpoint = process.env.MINIO_ENDPOINT || 'localhost'
-    const port = process.env.MINIO_PORT || '9000'
-    const url = `${protocol}://${endpoint}:${port}/${bucket}/${objectName}`
-
     return {
-      url,
-      public_id: `${bucket}/${objectName}`,
+      url: result.url,
+      public_id: result.publicId || `${bucket}/${filename}`,
       resource_type: resourceType
     }
   } catch (error) {
@@ -104,11 +101,13 @@ export const uploadFile = async (file: Buffer, folder: string): Promise<UploadRe
 }
 
 /**
- * Delete a file from MinIO
+ * Delete a file from storage
  * Maintains compatibility with the original Cloudinary deleteFile signature
  */
 export const deleteFile = async (publicId: string): Promise<void> => {
   try {
+    const storageProvider = getStorageProvider()
+
     // Parse the public_id to extract bucket and object name
     // Format is typically: bucket/path/to/file.ext
     const parts = publicId.split('/')
@@ -119,7 +118,7 @@ export const deleteFile = async (publicId: string): Promise<void> => {
     const bucket = parts[0]
     const objectName = parts.slice(1).join('/')
 
-    await minioClient.removeObject(bucket, objectName)
+    await storageProvider.deleteFile(bucket, objectName)
   } catch (error: unknown) {
     // Re-throw validation errors as-is
     if (error instanceof Error && error.message === 'Invalid public_id format') {
