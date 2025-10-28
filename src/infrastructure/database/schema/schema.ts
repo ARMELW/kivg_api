@@ -391,6 +391,23 @@ export const exports = pgTable('exports', {
   completedAt: timestamp('completed_at')
 })
 
+export const previews = pgTable('previews', {
+  id: text('id').primaryKey(),
+  sceneId: text('scene_id')
+    .notNull()
+    .references(() => scenes.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  status: text('status').notNull().default('queued'), // queued, processing, completed, failed, cancelled
+  progress: integer('progress').notNull().default(0), // 0-100
+  currentStep: text('current_step'),
+  previewUrl: text('preview_url'),
+  error: text('error'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  completedAt: timestamp('completed_at')
+})
+
 // AI Usage tracking for pay-per-use billing
 export const aiUsage = pgTable('ai_usage', {
   id: text('id').primaryKey(),
