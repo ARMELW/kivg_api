@@ -20,7 +20,7 @@ export class PreviewCleanupScheduler {
       return
     }
 
-    console.log('Starting preview cleanup scheduler...')
+    console.info('Starting preview cleanup scheduler...')
 
     // Run immediately on start
     this.runCleanup().catch(console.error)
@@ -30,7 +30,7 @@ export class PreviewCleanupScheduler {
       this.runCleanup().catch(console.error)
     }, this.CLEANUP_INTERVAL)
 
-    console.log(`Preview cleanup scheduler started. Will run every ${this.CLEANUP_INTERVAL / 1000 / 60} minutes.`)
+    console.info(`Preview cleanup scheduler started. Will run every ${this.CLEANUP_INTERVAL / 1000 / 60} minutes.`)
   }
 
   /**
@@ -40,7 +40,7 @@ export class PreviewCleanupScheduler {
     if (this.intervalId) {
       clearInterval(this.intervalId)
       this.intervalId = null
-      console.log('Preview cleanup scheduler stopped.')
+      console.info('Preview cleanup scheduler stopped.')
     }
   }
 
@@ -49,23 +49,23 @@ export class PreviewCleanupScheduler {
    */
   private async runCleanup(): Promise<void> {
     const startTime = Date.now()
-    console.log('[Preview Cleanup] Starting cleanup tasks...')
+    console.info('[Preview Cleanup] Starting cleanup tasks...')
 
     try {
       // Clean up expired previews
       const expiredStats = await this.cleanupService.cleanupExpiredPreviews()
-      console.log(
+      console.info(
         `[Preview Cleanup] Expired previews: ${expiredStats.deletedPreviews} deleted, ${expiredStats.freedSpace} bytes freed`
       )
 
       // Clean up orphaned previews
       const orphanedStats = await this.cleanupService.cleanupOrphanedPreviews()
-      console.log(
+      console.info(
         `[Preview Cleanup] Orphaned previews: ${orphanedStats.deletedPreviews} deleted, ${orphanedStats.freedSpace} bytes freed`
       )
 
       const totalTime = Date.now() - startTime
-      console.log(`[Preview Cleanup] Cleanup completed in ${totalTime}ms`)
+      console.info(`[Preview Cleanup] Cleanup completed in ${totalTime}ms`)
     } catch (error) {
       console.error('[Preview Cleanup] Error during cleanup:', error)
     }

@@ -62,7 +62,7 @@ export class PreviewController implements Routes {
                   sceneId: z.string().uuid(),
                   options: z
                     .object({
-                      quality: z.enum(['draft', 'standard', 'high']).optional().default('standard'),
+                      quality: z.enum(['preview', 'draft', 'standard', 'high']).optional().default('standard'),
                       aspectRatio: z.enum(['1:1', '16:9', '9:16']).optional().default('16:9'),
                       skipAudio: z.boolean().optional().default(false)
                     })

@@ -1,12 +1,17 @@
+import { CacheService } from '@/application/services/cache.service'
+import { PreviewProcessorService } from '@/application/services/preview-processor.service'
+import { PreviewQueueService } from '@/application/services/preview-queue.service'
+import { WhiteboardCliService } from '@/application/services/whiteboard-cli.service'
 import { IUseCase } from '@/domain/types/use-case.type'
 import { ActivityType } from '@/infrastructure/config/activity.config'
+import { PreviewRepository } from '@/infrastructure/repositories/preview.repository'
+import { SceneRepository } from '@/infrastructure/repositories/scene.repository'
 import type { PreviewCacheService } from '@/application/services/preview-cache.service'
-import type { PreviewQueueService } from '@/application/services/preview-queue.service'
 import type { Scene } from '@/domain/models/scene.model'
 import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
 
 export interface PreviewOptions {
-  quality?: 'draft' | 'standard' | 'high'
+  quality?: 'preview' | 'draft' | 'standard' | 'high'
   aspectRatio?: '1:1' | '16:9' | '9:16'
   skipAudio?: boolean
 }
@@ -85,8 +90,27 @@ export class CreatePreviewUseCase extends IUseCase<Params, Response> {
         error: undefined
       })
 
+      const previewRepository = new PreviewRepository()
+      const previewQueueService = PreviewQueueService.getInstance(previewRepository)
+      const previewProcessor = new PreviewProcessorService(
+        previewQueueService,
+        previewRepository,
+        new SceneRepository(),
+        new CacheService(),
+        new WhiteboardCliService()
+      )
+      await previewProcessor.processNextJob({
+        previewId: preview.id,
+        sceneId,
+        options: {
+          quality: options.quality || 'standard',
+          aspectRatio: options.aspectRatio || '16:9',
+          skipAudio: options.skipAudio || false
+        }
+      })
+
       // Add to queue
-      const queuePosition = this.queueService.enqueue({
+      /**const queuePosition = this.queueService.enqueue({
         previewId: preview.id,
         userId,
         sceneId,
@@ -97,7 +121,7 @@ export class CreatePreviewUseCase extends IUseCase<Params, Response> {
           aspectRatio: options.aspectRatio || '16:9',
           skipAudio: options.skipAudio || false
         }
-      })
+      })**/
 
       return {
         success: true,
@@ -106,7 +130,6 @@ export class CreatePreviewUseCase extends IUseCase<Params, Response> {
           sceneId: preview.sceneId,
           status: preview.status,
           progress: preview.progress,
-          queuePosition,
           createdAt: preview.createdAt.toISOString()
         }
       }
