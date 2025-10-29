@@ -44,10 +44,12 @@ export class App {
     }>()
     this.cleanupScheduler = new CleanupScheduler()
     this.previewCleanupScheduler = new PreviewCleanupScheduler()
-    const previewQueueService = new PreviewQueueService(new PreviewRepository())
+    // Initialize singleton PreviewQueueService
+    const previewRepository = new PreviewRepository()
+    const previewQueueService = PreviewQueueService.getInstance(previewRepository)
     this.previewProcessor = new PreviewProcessorService(
       previewQueueService,
-      new PreviewRepository(),
+      previewRepository,
       new SceneRepository(),
       new CacheService(),
       new WhiteboardCliService()

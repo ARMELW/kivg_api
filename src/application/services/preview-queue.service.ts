@@ -1,5 +1,11 @@
 import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
 
+export interface RateLimitCheck {
+  allowed: boolean
+  message?: string
+  remaining?: number
+}
+
 export interface PreviewJob {
   previewId: string
   userId: string
@@ -29,11 +35,25 @@ const PREVIEW_LIMITS = {
 }
 
 export class PreviewQueueService {
+  private static instance: PreviewQueueService | null = null
   private queue: InternalPreviewJob[] = []
   private processing: Set<string> = new Set()
   private userPreviewCounts: Map<string, { hour: number; day: number; lastReset: Date }> = new Map()
 
-  constructor(private readonly previewRepository: PreviewRepositoryInterface) {}
+  private constructor(private readonly previewRepository: PreviewRepositoryInterface) {}
+
+  /**
+   * Get or create singleton instance
+   */
+  static getInstance(previewRepository?: PreviewRepositoryInterface): PreviewQueueService {
+    if (!PreviewQueueService.instance) {
+      if (!previewRepository) {
+        throw new Error('PreviewRepository is required for first initialization')
+      }
+      PreviewQueueService.instance = new PreviewQueueService(previewRepository)
+    }
+    return PreviewQueueService.instance
+  }
 
   /**
    * Check if user has exceeded rate limits

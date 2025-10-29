@@ -38,7 +38,8 @@ export class PreviewCacheService {
   /**
    * Find existing cached preview with same scene hash
    */
-  findCachedPreview(): Promise<Preview | null> {
+  // eslint-disable-next-line unused-imports/no-unused-vars
+  findCachedPreview(sceneHash: string, userId: string): Promise<Preview | null> {
     // Note: This requires adding sceneHash field to the preview model and database
     // For now, we'll return null and implement full cache detection later
     // TODO: Implement sceneHash-based cache lookup
