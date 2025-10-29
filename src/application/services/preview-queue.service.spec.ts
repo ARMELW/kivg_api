@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { PreviewQueueService } from './preview-queue.service'
 import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
+import { PreviewQueueService } from './preview-queue.service'
 
 describe('PreviewQueueService', () => {
   let mockRepository: PreviewRepositoryInterface
