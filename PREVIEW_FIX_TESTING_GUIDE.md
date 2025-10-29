@@ -1,5 +1,27 @@
 # Preview URL Generation Fix - Testing Guide
 
+## ⚠️ Production Considerations
+
+**IMPORTANT**: The current implementation uses an **in-memory queue** which has the following limitations:
+
+- ✅ **Fast and efficient** for development and testing
+- ❌ **Queue data will be lost on server restart** - any queued or processing jobs will be lost
+- ❌ **Not suitable for horizontal scaling** - each server instance has its own queue
+- ❌ **No job persistence** - if server crashes, jobs are lost
+
+### Recommended for Production
+
+For production environments, consider implementing:
+
+1. **Persistent Queue (Redis/Bull)**: Store queue in Redis to survive restarts and enable distributed processing
+2. **Job Recovery**: Re-queue jobs that were processing when server restarted
+3. **Dead Letter Queue**: Move failed jobs to a separate queue for manual inspection
+4. **Monitoring**: Add metrics and alerts for queue depth, processing time, and failure rates
+
+See "Future Enhancements" section at the end of this document for more details.
+
+---
+
 ## Problem Summary
 When creating a preview scene via `POST /v1/preview/scene`, the preview would get stuck at "enqueue" status and never progress to processing or completion stages, preventing the generation of the preview URL.
 
