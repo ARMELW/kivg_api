@@ -13,6 +13,7 @@ import addSession from './infrastructure/middlewares/session.middleware'
 import sessionValidator from './infrastructure/middlewares/unauthorized-access.middleware'
 import { Home } from './infrastructure/pages/home'
 import { CleanupScheduler } from './infrastructure/schedulers/cleanup.scheduler'
+import { PreviewCleanupScheduler } from './infrastructure/schedulers/preview-cleanup.scheduler'
 //import { SubscriptionScheduler } from './infrastructure/schedulers/subscription.scheduler'
 import type { Routes } from './domain/types'
 
@@ -24,6 +25,7 @@ export class App {
     }
   }>
   private cleanupScheduler: CleanupScheduler
+  private previewCleanupScheduler: PreviewCleanupScheduler
   //  private subscriptionScheduler: SubscriptionScheduler
 
   constructor(routes: Routes[]) {
@@ -34,6 +36,7 @@ export class App {
       }
     }>()
     this.cleanupScheduler = new CleanupScheduler()
+    this.previewCleanupScheduler = new PreviewCleanupScheduler()
     //this.subscriptionScheduler = new SubscriptionScheduler()
     this.initializeGlobalMiddlewares()
     this.initializeRoutes(routes)
@@ -45,6 +48,7 @@ export class App {
 
   private startSchedulers() {
     this.cleanupScheduler.start()
+    this.previewCleanupScheduler.start()
     // this.subscriptionScheduler.start()
   }
 
