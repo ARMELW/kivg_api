@@ -1,7 +1,53 @@
+import { execSync, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { writeFile, unlink } from 'node:fs/promises'
-import { spawn } from 'node:child_process'
+import { unlink, writeFile } from 'node:fs/promises'
+import process from 'node:process'
 import type { Scene } from '@/domain/models/scene.model'
+
+/**
+ * Detect Python 3 path from system
+ */
+function detectPythonPath(): string {
+  const envPath = process.env.PYTHON_PATH
+  if (envPath) {
+    return envPath
+  }
+
+  // List of common Python 3 paths to try
+  const commonPaths = [
+    '/usr/bin/python3',
+    '/usr/local/bin/python3',
+    '/opt/homebrew/bin/python3', // macOS with Homebrew
+    String.raw`C:\Python311\python.exe`, // Windows
+    String.raw`C:\Python310\python.exe`, // Windows
+    'python3', // System PATH (will be resolved by shell)
+    'python' // Fallback
+  ]
+
+  // Try using 'which' (Unix-like) or 'where' (Windows)
+  try {
+    const cmd = process.platform === 'win32' ? 'where python' : 'which python3'
+    const result = execSync(cmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim()
+    if (result) {
+      return result.split('\n')[0] // Return first result if multiple
+    }
+  } catch {
+    // which/where failed, fall through to common paths
+  }
+
+  // Try common paths
+  for (const path of commonPaths) {
+    try {
+      execSync(`${path} --version`, { stdio: 'ignore' })
+      return path
+    } catch {
+      // Path not found, continue to next
+    }
+  }
+
+  // Default fallback
+  return '/usr/bin/python3'
+}
 
 export interface WhiteboardConfig {
   slides: Array<{
@@ -45,8 +91,8 @@ export class WhiteboardCliService {
   private scriptPath: string
 
   constructor() {
-    this.pythonPath = process.env.PYTHON_PATH || '/usr/bin/python3'
-    this.scriptPath = process.env.WHITEBOARD_CLI_PATH || '/opt/whiteboard-it/whiteboard_animator.py'
+    this.pythonPath = detectPythonPath()
+    this.scriptPath = process.env.WHITEBOARD_CLI_PATH || '/home/armel/dev/whiteboard/whiteboard_animator.py'
   }
 
   /**

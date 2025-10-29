@@ -14,10 +14,10 @@ export interface PreviewJob {
   createdAt: Date
 }
 
-export interface RateLimitCheck {
-  allowed: boolean
-  message?: string
-  remaining?: number
+// Add an internal job type where priority and createdAt are guaranteed
+type InternalPreviewJob = Omit<PreviewJob, 'priority' | 'createdAt'> & {
+  priority: number
+  createdAt: Date
 }
 
 const PREVIEW_LIMITS = {
@@ -29,7 +29,7 @@ const PREVIEW_LIMITS = {
 }
 
 export class PreviewQueueService {
-  private queue: PreviewJob[] = []
+  private queue: InternalPreviewJob[] = []
   private processing: Set<string> = new Set()
   private userPreviewCounts: Map<string, { hour: number; day: number; lastReset: Date }> = new Map()
 
@@ -109,10 +109,11 @@ export class PreviewQueueService {
    * Add preview to queue
    */
   enqueue(job: PreviewJob): number {
-    const jobWithDefaults = {
+    const jobWithDefaults: InternalPreviewJob = {
       ...job,
-      priority: job.priority || 1,
-      createdAt: new Date()
+      // ensure priority is a number (default to 1) and ensure createdAt exists
+      priority: typeof job.priority === 'number' ? job.priority : 1,
+      createdAt: job.createdAt ?? new Date()
     }
 
     this.queue.push(jobWithDefaults)
@@ -130,8 +131,13 @@ export class PreviewQueueService {
     userCounts.hour++
     userCounts.day++
 
+    const position = this.queue.findIndex((j) => j.previewId === job.previewId)
+    console.info(
+      `[PREVIEW QUEUE] 📥 Job enqueued: ${job.previewId} (scene: ${job.sceneId}, position: ${position}, total in queue: ${this.queue.length})`
+    )
+
     // Return position in queue
-    return this.queue.findIndex((j) => j.previewId === job.previewId)
+    return position
   }
 
   /**
@@ -156,10 +162,19 @@ export class PreviewQueueService {
 
     // Check if we're at global capacity
     if (this.processing.size >= PREVIEW_LIMITS.maxGlobalConcurrent) {
+      console.warn(
+        `[PREVIEW QUEUE] ⚠️  Global capacity reached (${this.processing.size}/${PREVIEW_LIMITS.maxGlobalConcurrent}). Waiting...`
+      )
       return null
     }
 
-    return this.queue.shift() || null
+    const job = this.queue.shift() as PreviewJob | undefined
+    if (job) {
+      console.info(
+        `[PREVIEW QUEUE] 📤 Job dequeued: ${job.previewId} (scene: ${job.sceneId}, remaining in queue: ${this.queue.length})`
+      )
+    }
+    return job || null
   }
 
   /**
@@ -167,6 +182,9 @@ export class PreviewQueueService {
    */
   markProcessing(previewId: string): void {
     this.processing.add(previewId)
+    console.info(
+      `[PREVIEW QUEUE] ⚙️  Job marked as processing: ${previewId} (${this.processing.size}/${PREVIEW_LIMITS.maxGlobalConcurrent})`
+    )
   }
 
   /**
@@ -174,6 +192,9 @@ export class PreviewQueueService {
    */
   markComplete(previewId: string): void {
     this.processing.delete(previewId)
+    console.info(
+      `[PREVIEW QUEUE] ✅ Job marked as complete: ${previewId} (${this.processing.size}/${PREVIEW_LIMITS.maxGlobalConcurrent})`
+    )
   }
 
   /**

@@ -1,7 +1,8 @@
+import { IUseCase } from '@/domain/types/use-case.type'
+import { ActivityType } from '@/infrastructure/config/activity.config'
+import type { CacheService } from '@/application/services/cache.service'
 import type { Preview } from '@/domain/models/preview.model'
 import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
-import type { IUseCase } from '@/domain/types/use-case.type'
-import type { CacheService } from '@/application/services/cache.service'
 
 type Params = {
   previewId: string
@@ -50,6 +51,14 @@ export class GetPreviewStatusUseCase extends IUseCase<Params, Response> {
           }
         }
 
+        // Ensure date fields are Date objects (cached data may be strings from JSON)
+        const createdAt = typeof cached.createdAt === 'string' ? new Date(cached.createdAt) : cached.createdAt
+        const completedAt = cached.completedAt
+          ? typeof cached.completedAt === 'string'
+            ? new Date(cached.completedAt)
+            : cached.completedAt
+          : undefined
+
         return {
           success: true,
           data: {
@@ -60,8 +69,8 @@ export class GetPreviewStatusUseCase extends IUseCase<Params, Response> {
             currentStep: cached.currentStep,
             previewUrl: cached.previewUrl,
             error: cached.error,
-            createdAt: cached.createdAt.toISOString(),
-            completedAt: cached.completedAt?.toISOString()
+            createdAt: createdAt.toISOString(),
+            completedAt: completedAt?.toISOString()
           }
         }
       }
@@ -112,7 +121,7 @@ export class GetPreviewStatusUseCase extends IUseCase<Params, Response> {
     }
   }
 
-  log(): string {
-    return 'GET_PREVIEW_STATUS'
+  log(): ActivityType {
+    return ActivityType.TEST
   }
 }

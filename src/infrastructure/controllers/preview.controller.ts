@@ -1,14 +1,14 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
+import { CacheService } from '@/application/services/cache.service'
+import { PreviewCacheService } from '@/application/services/preview-cache.service'
+import { PreviewQueueService } from '@/application/services/preview-queue.service'
+import { CancelPreviewUseCase } from '@/application/use-cases/preview/cancel-preview.use-case'
+import { CreatePreviewUseCase } from '@/application/use-cases/preview/create-preview.use-case'
+import { GetPreviewStatusUseCase } from '@/application/use-cases/preview/get-preview-status.use-case'
 import type { Routes } from '@/domain/types'
 import { PreviewRepository } from '../repositories/preview.repository'
 import { SceneRepository } from '../repositories/scene.repository'
-import { CreatePreviewUseCase } from '@/application/use-cases/preview/create-preview.use-case'
-import { GetPreviewStatusUseCase } from '@/application/use-cases/preview/get-preview-status.use-case'
-import { CancelPreviewUseCase } from '@/application/use-cases/preview/cancel-preview.use-case'
-import { PreviewCacheService } from '@/application/services/preview-cache.service'
-import { PreviewQueueService } from '@/application/services/preview-queue.service'
-import { CacheService } from '@/application/services/cache.service'
 
 /**
  * Preview Controller
@@ -30,27 +30,17 @@ export class PreviewController implements Routes {
     this.controller = new OpenAPIHono()
     this.previewRepository = new PreviewRepository()
     this.sceneRepository = new SceneRepository()
-    
+
     // Initialize services
     const cacheService = new CacheService()
     const previewCacheService = new PreviewCacheService(this.previewRepository)
     const queueService = new PreviewQueueService(this.previewRepository)
-    
+
     // Initialize use cases
-    this.createPreviewUseCase = new CreatePreviewUseCase(
-      this.previewRepository,
-      previewCacheService,
-      queueService
-    )
-    this.getPreviewStatusUseCase = new GetPreviewStatusUseCase(
-      this.previewRepository,
-      cacheService
-    )
-    this.cancelPreviewUseCase = new CancelPreviewUseCase(
-      this.previewRepository,
-      queueService
-    )
-    
+    this.createPreviewUseCase = new CreatePreviewUseCase(this.previewRepository, previewCacheService, queueService)
+    this.getPreviewStatusUseCase = new GetPreviewStatusUseCase(this.previewRepository, cacheService)
+    this.cancelPreviewUseCase = new CancelPreviewUseCase(this.previewRepository, queueService)
+
     this.initRoutes()
   }
 
@@ -69,11 +59,13 @@ export class PreviewController implements Routes {
               'application/json': {
                 schema: z.object({
                   sceneId: z.string().uuid(),
-                  options: z.object({
-                    quality: z.enum(['draft', 'standard', 'high']).optional().default('standard'),
-                    aspectRatio: z.enum(['1:1', '16:9', '9:16']).optional().default('16:9'),
-                    skipAudio: z.boolean().optional().default(false)
-                  }).optional()
+                  options: z
+                    .object({
+                      quality: z.enum(['draft', 'standard', 'high']).optional().default('standard'),
+                      aspectRatio: z.enum(['1:1', '16:9', '9:16']).optional().default('16:9'),
+                      skipAudio: z.boolean().optional().default(false)
+                    })
+                    .optional()
                 })
               }
             }
@@ -369,15 +361,17 @@ export class PreviewController implements Routes {
                 schema: z.object({
                   success: z.boolean(),
                   data: z.object({
-                    previews: z.array(z.object({
-                      previewId: z.string(),
-                      sceneId: z.string(),
-                      status: z.string(),
-                      progress: z.number(),
-                      previewUrl: z.string().optional(),
-                      createdAt: z.string(),
-                      completedAt: z.string().optional()
-                    })),
+                    previews: z.array(
+                      z.object({
+                        previewId: z.string(),
+                        sceneId: z.string(),
+                        status: z.string(),
+                        progress: z.number(),
+                        previewUrl: z.string().optional(),
+                        createdAt: z.string(),
+                        completedAt: z.string().optional()
+                      })
+                    ),
                     total: z.number(),
                     page: z.number(),
                     limit: z.number(),
@@ -397,8 +391,8 @@ export class PreviewController implements Routes {
           }
 
           const query = c.req.query()
-          const page = parseInt(query.page || '1')
-          const limit = parseInt(query.limit || '20')
+          const page = Number.parseInt(query.page || '1')
+          const limit = Number.parseInt(query.limit || '20')
           const skip = (page - 1) * limit
 
           const result = await this.previewRepository.findAll({
@@ -414,7 +408,7 @@ export class PreviewController implements Routes {
           return c.json({
             success: true,
             data: {
-              previews: result.previews.map(p => ({
+              previews: result.previews.map((p) => ({
                 previewId: p.id,
                 sceneId: p.sceneId,
                 status: p.status,

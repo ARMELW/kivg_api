@@ -1,10 +1,10 @@
-import { CacheService } from './cache.service'
-import type { PreviewJob } from './preview-queue.service'
-import { StorageService } from './storage.service'
-import { WhiteboardCliService } from './whiteboard-cli.service'
 import { readFile } from 'node:fs/promises'
 import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
 import type { SceneRepository } from '@/infrastructure/repositories/scene.repository'
+import { CacheService } from './cache.service'
+import { StorageService } from './storage.service'
+import { WhiteboardCliService } from './whiteboard-cli.service'
+import type { PreviewJob } from './preview-queue.service'
 
 export class PreviewGenerationService {
   private whiteboardService: WhiteboardCliService

@@ -1,49 +1,55 @@
-import { randomUUID } from 'node:crypto'
 import process from 'node:process'
+import { StripePlanSyncService } from '../src/application/services/stripe-plan-sync.service'
+import { CreatePlanUseCase } from '../src/application/use-cases/plan/create-plan.use-case'
 import { pricingData } from '../src/infrastructure/config/subscription.config'
-import { db } from '../src/infrastructure/database/db'
-import { plans } from '../src/infrastructure/database/schema/schema'
+import { PlanRepository } from '../src/infrastructure/repositories/plan.repository'
 
 async function seedPlans() {
   console.log('🌱 Seeding plans...')
 
   try {
+    // Use repository and use case
+    const planRepository = new PlanRepository()
+    const stripePlanSyncService = new StripePlanSyncService(planRepository)
+    const useCase = new CreatePlanUseCase(planRepository, stripePlanSyncService)
+
     // Check if plans already exist
-    const existingPlans = await db.select().from(plans)
+    const existingPlans = await planRepository.findAll()
     if (existingPlans.length > 0) {
       console.log('⚠️  Plans already exist. Skipping seed.')
       return
     }
 
-    // Convert existing pricing data to plan format
-    const plansToInsert = pricingData.map((plan, index) => ({
-      id: randomUUID(),
-      name: plan.title,
-      slug: plan.id,
-      description: plan.description,
-      isActive: true,
-      isPublic: true,
-      sortOrder: index,
-      priceMonthly: plan.prices.monthly * 100, // Convert to cents
-      priceYearly: plan.prices.yearly * 100, // Convert to cents
-      features: plan.features as any,
-      stripeProductId: null,
-      stripePriceIdMonthly: plan.stripeIds.monthly,
-      stripePriceIdYearly: plan.stripeIds.yearly,
-      metadata: {
-        childLimit: plan.childLimit
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }))
-
-    // Insert plans
-    await db.insert(plans).values(plansToInsert)
-
-    console.log(`✅ Successfully seeded ${plansToInsert.length} plans:`)
-    plansToInsert.forEach((plan) => {
-      console.log(`   - ${plan.name} (${plan.slug})`)
-    })
+    let createdCount = 0
+    for (const [index, plan] of pricingData.entries()) {
+      const dto = {
+        name: plan.title,
+        slug: plan.id,
+        description: plan.description,
+        isActive: true,
+        isPublic: true,
+        sortOrder: index,
+        pricing: {
+          monthly: plan.prices.monthly * 100,
+          yearly: plan.prices.yearly * 100
+        },
+        features: plan.features,
+        stripeProductId: null,
+        stripePriceIdMonthly: plan.stripeIds.monthly,
+        stripePriceIdYearly: plan.stripeIds.yearly,
+        metadata: {
+          childLimit: plan.childLimit
+        }
+      }
+      const result = await useCase.execute(dto)
+      if (result.success) {
+        createdCount++
+        console.log(`   - ${dto.name} (${dto.slug}) [OK]`)
+      } else {
+        console.error(`   - ${dto.name} (${dto.slug}) [ERROR]: ${result.error}`)
+      }
+    }
+    console.log(`✅ Successfully seeded ${createdCount} plans.`)
   } catch (error) {
     console.error('❌ Error seeding plans:', error)
     throw error

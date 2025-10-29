@@ -10,8 +10,14 @@ import { responseMiddleware } from './infrastructure/middlewares/response.middle
 import addSession from './infrastructure/middlewares/session.middleware'
 //import addStripe from './infrastructure/middlewares/stripe.middleware'
 //import { checkTrialStatus } from './infrastructure/middlewares/trial.middleware'
+import { CacheService } from './application/services/cache.service'
+import { PreviewProcessorService } from './application/services/preview-processor.service'
+import { PreviewQueueService } from './application/services/preview-queue.service'
+import { WhiteboardCliService } from './application/services/whiteboard-cli.service'
 import sessionValidator from './infrastructure/middlewares/unauthorized-access.middleware'
 import { Home } from './infrastructure/pages/home'
+import { PreviewRepository } from './infrastructure/repositories/preview.repository'
+import { SceneRepository } from './infrastructure/repositories/scene.repository'
 import { CleanupScheduler } from './infrastructure/schedulers/cleanup.scheduler'
 import { PreviewCleanupScheduler } from './infrastructure/schedulers/preview-cleanup.scheduler'
 //import { SubscriptionScheduler } from './infrastructure/schedulers/subscription.scheduler'
@@ -26,6 +32,7 @@ export class App {
   }>
   private cleanupScheduler: CleanupScheduler
   private previewCleanupScheduler: PreviewCleanupScheduler
+  private previewProcessor: PreviewProcessorService
   //  private subscriptionScheduler: SubscriptionScheduler
 
   constructor(routes: Routes[]) {
@@ -37,6 +44,14 @@ export class App {
     }>()
     this.cleanupScheduler = new CleanupScheduler()
     this.previewCleanupScheduler = new PreviewCleanupScheduler()
+    const previewQueueService = new PreviewQueueService(new PreviewRepository())
+    this.previewProcessor = new PreviewProcessorService(
+      previewQueueService,
+      new PreviewRepository(),
+      new SceneRepository(),
+      new CacheService(),
+      new WhiteboardCliService()
+    )
     //this.subscriptionScheduler = new SubscriptionScheduler()
     this.initializeGlobalMiddlewares()
     this.initializeRoutes(routes)
@@ -47,8 +62,13 @@ export class App {
   }
 
   private startSchedulers() {
+    console.info('[APP] 🎯 Starting schedulers...')
     this.cleanupScheduler.start()
+    console.info('[APP] ✅ Cleanup scheduler started')
     this.previewCleanupScheduler.start()
+    console.info('[APP] ✅ Preview cleanup scheduler started')
+    this.previewProcessor.start()
+    console.info('[APP] ✅ Preview processor started')
     // this.subscriptionScheduler.start()
   }
 

@@ -1,5 +1,5 @@
-import { PreviewRepository } from '@/infrastructure/repositories/preview.repository'
 import { PreviewCleanupService } from '@/application/services/preview-cleanup.service'
+import { PreviewRepository } from '@/infrastructure/repositories/preview.repository'
 
 export class PreviewCleanupScheduler {
   private cleanupService: PreviewCleanupService
@@ -54,11 +54,15 @@ export class PreviewCleanupScheduler {
     try {
       // Clean up expired previews
       const expiredStats = await this.cleanupService.cleanupExpiredPreviews()
-      console.log(`[Preview Cleanup] Expired previews: ${expiredStats.deletedPreviews} deleted, ${expiredStats.freedSpace} bytes freed`)
+      console.log(
+        `[Preview Cleanup] Expired previews: ${expiredStats.deletedPreviews} deleted, ${expiredStats.freedSpace} bytes freed`
+      )
 
       // Clean up orphaned previews
       const orphanedStats = await this.cleanupService.cleanupOrphanedPreviews()
-      console.log(`[Preview Cleanup] Orphaned previews: ${orphanedStats.deletedPreviews} deleted, ${orphanedStats.freedSpace} bytes freed`)
+      console.log(
+        `[Preview Cleanup] Orphaned previews: ${orphanedStats.deletedPreviews} deleted, ${orphanedStats.freedSpace} bytes freed`
+      )
 
       const totalTime = Date.now() - startTime
       console.log(`[Preview Cleanup] Cleanup completed in ${totalTime}ms`)

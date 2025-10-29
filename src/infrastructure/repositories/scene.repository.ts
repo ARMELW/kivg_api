@@ -71,14 +71,16 @@ export class SceneRepository implements SceneRepositoryInterface {
   }
 
   async update(id: string, data: Partial<Omit<Scene, 'id' | 'createdAt' | 'updatedAt' | 'projectId'>>): Promise<Scene> {
-    const [result] = await db
-      .update(scenes)
-      .set({
-        ...data,
-        updatedAt: new Date()
-      })
-      .where(eq(scenes.id, id))
-      .returning()
+    // Sanitize date fields
+    const patch: any = { ...data }
+    if ('updatedAt' in patch && typeof patch.updatedAt === 'string') {
+      patch.updatedAt = new Date(patch.updatedAt)
+    }
+    if ('createdAt' in patch && typeof patch.createdAt === 'string') {
+      patch.createdAt = new Date(patch.createdAt)
+    }
+    patch.updatedAt = patch.updatedAt ?? new Date()
+    const [result] = await db.update(scenes).set(patch).where(eq(scenes.id, id)).returning()
 
     return this.mapToScene(result)
   }

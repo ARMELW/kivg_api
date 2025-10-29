@@ -38,26 +38,26 @@ export class PreviewCacheService {
   /**
    * Find existing cached preview with same scene hash
    */
-  async findCachedPreview(_sceneHash: string, _userId: string): Promise<Preview | null> {
+  findCachedPreview(): Promise<Preview | null> {
     // Note: This requires adding sceneHash field to the preview model and database
     // For now, we'll return null and implement full cache detection later
     // TODO: Implement sceneHash-based cache lookup
-    return null
+    return Promise.resolve(null)
   }
 
   /**
    * Get cache statistics
    */
-  async getCacheStats(_userId: string): Promise<{
+  getCacheStats(): Promise<{
     totalPreviews: number
     cachedPreviews: number
     cacheHitRate: number
   }> {
     // Placeholder implementation
-    return {
+    return Promise.resolve({
       totalPreviews: 0,
       cachedPreviews: 0,
       cacheHitRate: 0
-    }
+    })
   }
 }

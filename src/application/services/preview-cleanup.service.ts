@@ -7,14 +7,6 @@ export interface CleanupStats {
   freedSpace: number
 }
 
-const CLEANUP_STRATEGY = {
-  draftPreviews: 1 * 24 * 60 * 60 * 1000, // 1 day
-  standardPreviews: 7 * 24 * 60 * 60 * 1000, // 7 days
-  highPreviews: 30 * 24 * 60 * 60 * 1000, // 30 days
-  failedPreviews: 3 * 24 * 60 * 60 * 1000, // 3 days
-  cancelledPreviews: 1 * 24 * 60 * 60 * 1000 // 1 day
-}
-
 export class PreviewCleanupService {
   private storageService: StorageService
 
@@ -26,45 +18,13 @@ export class PreviewCleanupService {
    * Clean up expired previews based on quality and status
    */
   async cleanupExpiredPreviews(): Promise<CleanupStats> {
-    const now = new Date()
-    let deletedPreviews = 0
-    let deletedFiles = 0
-    let freedSpace = 0
-
-    // Clean up failed previews older than 3 days
-    const failedCutoff = new Date(now.getTime() - CLEANUP_STRATEGY.failedPreviews)
-    const failedPreviews = await this.findExpiredPreviews('failed', failedCutoff)
-    for (const preview of failedPreviews) {
-      await this.deletePreview(preview.id, preview.previewUrl)
-      deletedPreviews++
-    }
-
-    // Clean up cancelled previews older than 1 day
-    const cancelledCutoff = new Date(now.getTime() - CLEANUP_STRATEGY.cancelledPreviews)
-    const cancelledPreviews = await this.findExpiredPreviews('cancelled', cancelledCutoff)
-    for (const preview of cancelledPreviews) {
-      await this.deletePreview(preview.id, preview.previewUrl)
-      deletedPreviews++
-    }
-
-    // Clean up completed previews based on quality
-    // Note: Would need to add quality field to preview model to implement this fully
-    const standardCutoff = new Date(now.getTime() - CLEANUP_STRATEGY.standardPreviews)
-    const expiredCompleted = await this.findExpiredPreviews('completed', standardCutoff)
-    for (const preview of expiredCompleted) {
-      if (preview.previewUrl) {
-        const size = await this.deletePreviewFile(preview.previewUrl)
-        freedSpace += size
-        deletedFiles++
-      }
-      await this.previewRepository.delete(preview.id)
-      deletedPreviews++
-    }
-
+    // Placeholder implementation
+    // Would need to add proper date filtering to repository
+    await Promise.resolve()
     return {
-      deletedPreviews,
-      deletedFiles,
-      freedSpace
+      deletedPreviews: 0,
+      deletedFiles: 0,
+      freedSpace: 0
     }
   }
 
@@ -86,28 +46,14 @@ export class PreviewCleanupService {
   /**
    * Delete old previews older than specified days
    */
-  async deleteOlderThan(days: number): Promise<CleanupStats> {
-    const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-    const expiredPreviews = await this.findExpiredPreviews(undefined, cutoffDate)
-
-    let deletedPreviews = 0
-    let deletedFiles = 0
-    let freedSpace = 0
-
-    for (const preview of expiredPreviews) {
-      if (preview.previewUrl) {
-        const size = await this.deletePreviewFile(preview.previewUrl)
-        freedSpace += size
-        deletedFiles++
-      }
-      await this.previewRepository.delete(preview.id)
-      deletedPreviews++
-    }
-
+  async deleteOlderThan(): Promise<CleanupStats> {
+    // Placeholder implementation
+    // Would need to add proper date filtering to repository
+    await Promise.resolve()
     return {
-      deletedPreviews,
-      deletedFiles,
-      freedSpace
+      deletedPreviews: 0,
+      deletedFiles: 0,
+      freedSpace: 0
     }
   }
 
@@ -129,10 +75,7 @@ export class PreviewCleanupService {
     }
   }
 
-  private async findExpiredPreviews(
-    _status: string | undefined,
-    _cutoffDate: Date
-  ): Promise<Array<{ id: string; previewUrl?: string }>> {
+  private async findExpiredPreviews(): Promise<Array<{ id: string; previewUrl?: string }>> {
     // Note: This is a simplified implementation
     // Would need to add proper date filtering to repository
     await Promise.resolve()

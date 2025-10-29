@@ -52,7 +52,10 @@ async function createSuperAdminRole() {
   return superAdminRole
 }
 
-async function createSuperAdmin(adminData, superAdminRole) {
+async function createSuperAdmin(
+  adminData: { name: any; firstname: any; lastname: any; email: any },
+  superAdminRole: { id: string; name: string; createdAt: Date; updatedAt: Date; description: string | null }
+) {
   const now = new Date()
   const tempPassword = `password1234!`
 

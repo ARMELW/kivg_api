@@ -145,8 +145,9 @@ export class PlanController implements Routes {
     )
 
     // Admin endpoints - Require authentication and admin role
-    this.controller.use('/v1/admin/plans/*', authMiddleware)
-    this.controller.use('/v1/admin/plans/*', roleMiddleware(['admin', 'super_admin']))
+    // Cast to `any` to satisfy Hono's middleware typing without changing runtime behavior
+    this.controller.use('/v1/admin/plans/*', authMiddleware as any)
+    this.controller.use('/v1/admin/plans/*', roleMiddleware(['admin', 'super_admin']) as any)
 
     // Admin - Get all plans (including inactive)
     this.controller.openapi(

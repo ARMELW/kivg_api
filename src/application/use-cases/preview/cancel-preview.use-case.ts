@@ -1,6 +1,6 @@
-import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
-import type { IUseCase } from '@/domain/types/use-case.type'
+import { IUseCase } from '@/domain/types/use-case.type'
 import type { PreviewQueueService } from '@/application/services/preview-queue.service'
+import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
 
 type Params = {
   previewId: string

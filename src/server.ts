@@ -20,6 +20,8 @@ import { FontController } from './infrastructure/controllers/font.controller'
 import { HealthController } from './infrastructure/controllers/health.controller'
 import { UploadController } from './infrastructure/controllers/upload.controller'
 
+console.info('[SERVER] 🔧 Initializing App...')
+
 const app = new App([
   new UserController(),
   new UserApiKeysController(),
@@ -40,6 +42,8 @@ const app = new App([
   new AIUsageController(),
   new FontController()
 ]).getApp()
+
+console.info('[SERVER] ✅ App initialized successfully')
 
 const PORT = Bun.env.PORT || 3000
 

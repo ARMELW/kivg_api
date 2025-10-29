@@ -73,7 +73,7 @@ export class SceneController implements Routes {
             sceneImage: undefined,
             layers: body.layers || [],
             cameras: body.cameras || [],
-            sceneCameras: [],
+            sceneCameras: body.sceneCameras || [],
             multiTimeline: {},
             audio: {},
             sceneAudio: undefined,
@@ -261,14 +261,23 @@ export class SceneController implements Routes {
           if (!scene) {
             return c.json({ success: false, error: 'Scene not found' }, 404)
           }
-
+          console.info('scene', body)
+          // Ensure updatedAt is a Date object for Drizzle ORM
+          if ('updatedAt' in body && typeof body.updatedAt === 'string') {
+            body.updatedAt = new Date(body.updatedAt)
+          }
+          // Always set updatedAt to now if not provided
+          if (!('updatedAt' in body)) {
+            body.updatedAt = new Date()
+          }
           const updated = await this.sceneRepository.update(id, body)
 
           return c.json({
             success: true,
             data: updated
           })
-        } catch {
+        } catch (error: any) {
+          console.error('Scene update error:', error)
           return c.json({ success: false, error: 'Failed to update scene' }, 400)
         }
       }

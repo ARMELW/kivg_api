@@ -14,9 +14,9 @@ const logQuery = env.NODE_ENV === 'development'
 export const client = postgres(env.DATABASE_URL, {
   ...(logQuery && {
     debug: (conn, query, params) => {
-      console.error('SQL Query:', query)
+      //console.error('SQL Query:', query)
       if (params && params.length > 0) {
-        console.error('Params:', params)
+        //console.error('Params:', params)
       }
     }
   })
