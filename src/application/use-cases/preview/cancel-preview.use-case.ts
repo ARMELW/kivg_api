@@ -1,4 +1,5 @@
 import { IUseCase } from '@/domain/types/use-case.type'
+import { ActivityType } from '@/infrastructure/config/activity.config'
 import type { PreviewQueueService } from '@/application/services/preview-queue.service'
 import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
 
@@ -81,7 +82,7 @@ export class CancelPreviewUseCase extends IUseCase<Params, Response> {
     }
   }
 
-  log(): string {
-    return 'CANCEL_PREVIEW'
+  log(): ActivityType {
+    return ActivityType.CANCEL_PREVIEW
   }
 }

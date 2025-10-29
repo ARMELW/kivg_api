@@ -39,5 +39,7 @@ export enum ActivityType {
   UPDATE_PLAN = 'UPDATE_PLAN',
   DELETE_PLAN = 'DELETE_PLAN',
   GET_PLAN = 'GET_PLAN',
-  GET_PLANS = 'GET_PLANS'
+  GET_PLANS = 'GET_PLANS',
+  // Preview Management
+  CANCEL_PREVIEW = 'CANCEL_PREVIEW'
 }

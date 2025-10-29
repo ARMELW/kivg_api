@@ -63,7 +63,7 @@ export class PreviewGenerationService {
       await this.updateProgress(previewId, 90, 'Uploading preview...')
       const videoBuffer = await readFile(videoPath)
       const uploadResult = await this.storageService.uploadFile(videoBuffer, `preview_${previewId}.mp4`, {
-        bucket: 'previews',
+        bucket: 'EXPORTS',
         contentType: 'video/mp4',
         metadata: {
           previewId,

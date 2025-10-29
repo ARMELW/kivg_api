@@ -34,7 +34,8 @@ export class PreviewController implements Routes {
     // Initialize services
     const cacheService = new CacheService()
     const previewCacheService = new PreviewCacheService(this.previewRepository)
-    const queueService = new PreviewQueueService(this.previewRepository)
+    // Use singleton PreviewQueueService
+    const queueService = PreviewQueueService.getInstance(this.previewRepository)
 
     // Initialize use cases
     this.createPreviewUseCase = new CreatePreviewUseCase(this.previewRepository, previewCacheService, queueService)
