@@ -188,5 +188,36 @@ describe('LayerSchema', () => {
         expect(result.data.height).toBe(0)
       }
     })
+
+    it('should reject layers with negative width or height', () => {
+      const layerWithNegativeWidth = {
+        id: 'layer-negative-width',
+        name: 'Layer with Negative Width',
+        type: 'shape' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        width: -100,
+        height: 150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const layerWithNegativeHeight = {
+        id: 'layer-negative-height',
+        name: 'Layer with Negative Height',
+        type: 'shape' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        width: 100,
+        height: -150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      expect(LayerSchema.safeParse(layerWithNegativeWidth).success).toBe(false)
+      expect(LayerSchema.safeParse(layerWithNegativeHeight).success).toBe(false)
+    })
   })
 })
