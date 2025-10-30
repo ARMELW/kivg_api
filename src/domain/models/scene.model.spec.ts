@@ -26,7 +26,7 @@ describe('LayerSchema', () => {
       }
     })
 
-    it('should accept a layer without width and height properties (backward compatibility)', () => {
+    it('should reject a layer without width and height properties', () => {
       const layerWithoutDimensions = {
         id: 'layer-456',
         name: 'Old Layer',
@@ -40,11 +40,7 @@ describe('LayerSchema', () => {
 
       const result = LayerSchema.safeParse(layerWithoutDimensions)
 
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.width).toBeUndefined()
-        expect(result.data.height).toBeUndefined()
-      }
+      expect(result.success).toBe(false)
     })
 
     it('should accept different layer types with dimensions', () => {
@@ -109,6 +105,119 @@ describe('LayerSchema', () => {
       const result = LayerSchema.safeParse(invalidLayer)
 
       expect(result.success).toBe(false)
+    })
+
+    it('should reject a layer with only width (missing height)', () => {
+      const layerMissingHeight = {
+        id: 'layer-missing-height',
+        name: 'Layer Missing Height',
+        type: 'text' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        width: 300,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const result = LayerSchema.safeParse(layerMissingHeight)
+
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject a layer with only height (missing width)', () => {
+      const layerMissingWidth = {
+        id: 'layer-missing-width',
+        name: 'Layer Missing Width',
+        type: 'text' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        height: 150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const result = LayerSchema.safeParse(layerMissingWidth)
+
+      expect(result.success).toBe(false)
+    })
+
+    it('should accept layers with decimal width and height values', () => {
+      const layerWithDecimals = {
+        id: 'layer-decimals',
+        name: 'Layer with Decimals',
+        type: 'text' as const,
+        mode: 'draw' as const,
+        position: { x: 100.5, y: 200.5 },
+        width: 300.75,
+        height: 150.25,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const result = LayerSchema.safeParse(layerWithDecimals)
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.width).toBe(300.75)
+        expect(result.data.height).toBe(150.25)
+      }
+    })
+
+    it('should accept layers with zero width and height', () => {
+      const layerWithZeroDimensions = {
+        id: 'layer-zero',
+        name: 'Layer with Zero Dimensions',
+        type: 'shape' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        width: 0,
+        height: 0,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const result = LayerSchema.safeParse(layerWithZeroDimensions)
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.width).toBe(0)
+        expect(result.data.height).toBe(0)
+      }
+    })
+
+    it('should reject layers with negative width or height', () => {
+      const layerWithNegativeWidth = {
+        id: 'layer-negative-width',
+        name: 'Layer with Negative Width',
+        type: 'shape' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        width: -100,
+        height: 150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const layerWithNegativeHeight = {
+        id: 'layer-negative-height',
+        name: 'Layer with Negative Height',
+        type: 'shape' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        width: 100,
+        height: -150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      expect(LayerSchema.safeParse(layerWithNegativeWidth).success).toBe(false)
+      expect(LayerSchema.safeParse(layerWithNegativeHeight).success).toBe(false)
     })
   })
 })
