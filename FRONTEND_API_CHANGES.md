@@ -1,6 +1,6 @@
 # Changements API - Mise à jour Frontend
 
-## Date: 30 Octobre 2025
+## Date: October 30, 2025
 
 ## 🔴 BREAKING CHANGE: Champs width et height obligatoires pour les layers
 
@@ -332,5 +332,5 @@ En cas de questions ou problèmes:
 
 ---
 
-**Date de mise à jour**: 30 Octobre 2025
+**Date de mise à jour**: October 30, 2025
 **Version API**: v1
