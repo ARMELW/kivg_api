@@ -2,77 +2,72 @@ import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { readFile, unlink, writeFile } from 'node:fs/promises'
 import process from 'node:process'
-import type { Scene } from '@/domain/models/scene.model'
+import type { Camera, Scene } from '@/domain/models/scene.model'
 import { StorageService } from './storage.service'
 
 const WHITEBOARD_TIMEOUT_MS = 10 * 60 * 1000
 // const FFMPEG_TIMEOUT_MS = 5 * 60 * 1000 // Reserved for future use
 // const PROCESS_CLEANUP_DELAY_MS = 1000 // Reserved for future use
 
-/**
- * Detect Python 3 path from system (reserved for future use with path detection)
- */
-/*
-function detectPythonPath(): string {
-  const envPath = process.env.PYTHON_PATH
-  if (envPath) {
-    return envPath
-  }
-
-  // List of common Python 3 paths to try
-  const commonPaths = [
-    '/usr/bin/python3',
-    '/usr/local/bin/python3',
-    '/opt/homebrew/bin/python3', // macOS with Homebrew
-    String.raw`C:\Python311\python.exe`, // Windows
-    String.raw`C:\Python310\python.exe`, // Windows
-    'python3', // System PATH (will be resolved by shell)
-    'python' // Fallback
-  ]
-
-  // Try using 'which' (Unix-like) or 'where' (Windows)
-  try {
-    const cmd = process.platform === 'win32' ? 'where python' : 'which python3'
-    const result = execSync(cmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }).trim()
-    if (result) {
-      return result.split('\n')[0] // Return first result if multiple
-    }
-  } catch {
-    // which/where failed, fall through to common paths
-  }
-
-  // Try common paths
-  for (const path of commonPaths) {
-    try {
-      execSync(`${path} --version`, { stdio: 'ignore' })
-      return path
-    } catch {
-      // Path not found, continue to next
-    }
-  }
-
-  // Default fallback
-  return '/usr/bin/python3'
-}
-*/
-
 export interface WhiteboardConfig {
   slides: Array<{
     index: number
     duration: number
-    skip_rate: number
-    layers: Array<{
-      type: string
+    skip_rate?: number
+    layers?: Array<{
+      type: 'image' | 'text' | 'arrow' | 'shape' | 'video'
       image_path?: string
+      text_config?: {
+        text: string
+        font?: string
+        size?: number
+        color?: string
+        align?: string
+        position?: { x: number; y: number }
+      }
+      arrow_config?: {
+        start: [number, number]
+        end: [number, number]
+        color?: string
+        fill_color?: string
+        stroke_width?: number
+        arrow_size?: number
+        duration?: number
+      }
+      shape_config?: {
+        shape: 'rectangle' | 'circle' | 'triangle' | 'polygon'
+        color?: string
+        fill_color?: string
+        stroke_width?: number
+        position?: { x: number; y: number }
+        width?: number
+        height?: number
+      }
+      position?: { x: number; y: number }
       z_index: number
-      position: { x: number; y: number }
-      scale: number
+      skip_rate?: number
+      scale?: number
+      opacity?: number
+      mode?: 'draw' | 'static' | 'animated' | 'eraser'
+      entrance_animation?: {
+        type: string
+        duration: number
+      }
+      exit_animation?: {
+        type: string
+        duration: number
+      }
+      morph?: {
+        enabled: boolean
+        duration: number
+      }
     }>
   }>
   transitions?: Array<{
     after_slide: number
     type: string
     duration: number
+    pause_before?: number
   }>
 }
 
@@ -122,45 +117,279 @@ export class WhiteboardCliService {
   private pythonPath: string
   private scriptPath: string
   private storageService: StorageService
+  private canvasWidth: number = 1920
+  private canvasHeight: number = 1080
 
   constructor(storageService?: StorageService) {
-    this.pythonPath = 'python' //detectPythonPath()
+    this.pythonPath = 'python'
     this.scriptPath = process.env.WHITEBOARD_CLI_PATH || '/home/armel/dev/whiteboard/animator/whiteboard_animator.py'
     this.storageService = storageService || new StorageService()
   }
 
   /**
    * Generate whiteboard config from scene
+   * Groups layers into slides based on cameras/timeline
+   * Supports multiple layer types: image, text, arrow, shape, video
    */
   generateConfig(scene: Scene): WhiteboardConfig {
-    return {
-      slides: scene.layers.map((layer, index) => ({
+    // Group layers into slides (one slide per camera if available)
+    let slides: any[] = []
+
+    let defaultCamera: Camera | null = null
+    if (scene.sceneCameras && scene.sceneCameras.length > 0) {
+      scene.cameras = scene.sceneCameras
+      // Find default camera (isDefault: true), fallback to first
+      defaultCamera = scene.sceneCameras.find((cam: any) => cam.isDefault) || scene.sceneCameras[0]
+      console.log('Default camera for layer positioning:', defaultCamera)
+
+      // Use cameras as slide boundaries
+      slides = scene.sceneCameras.map((camera: any, index: number) => ({
         index,
-        duration: scene.duration || 3,
-        skip_rate: layer.skipRate || 8,
-        layers: [
-          {
-            type: layer.type,
-            image_path: layer.imagePath,
-            z_index: layer.zIndex,
-            position: layer.position,
-            scale: layer.scale
-          }
-        ]
-      })),
-      transitions:
-        scene.transitionType !== 'none'
-          ? [
-              {
-                after_slide: 0,
-                type: scene.transitionType,
-                duration: 0.5
-              }
-            ]
-          : undefined
+        duration: camera.duration || scene.slideDuration || 3,
+        skip_rate: camera.pauseDuration ? Math.ceil(camera.pauseDuration) : 10,
+        layers: scene.layers.map((layer: any) =>
+          this.mapLayerToConfig(layer, defaultCamera, this.canvasWidth, this.canvasHeight)
+        )
+      }))
+    } else {
+      // Fallback: create a single slide with all layers
+      slides = [
+        {
+          index: 0,
+          duration: scene.duration || 3,
+          skip_rate: 8,
+          layers: scene.layers.map((layer: any) =>
+            this.mapLayerToConfig(layer, null, this.canvasWidth, this.canvasHeight)
+          )
+        }
+      ]
+    }
+
+    // Generate transitions between slides
+    const transitions =
+      scene.transitionType !== 'none'
+        ? slides.slice(0, -1).map((slide: any, index: number) => ({
+            after_slide: index,
+            type: scene.transitionType || 'fade',
+            duration: 0.5,
+            pause_before: 0.5
+          }))
+        : []
+
+    return {
+      slides,
+      transitions: transitions.length > 0 ? transitions : undefined
     }
   }
 
+  /**
+   * Map scene layer to whiteboard config layer format
+   * Supports image, text, arrow, and shape types
+   */
+  private mapLayerToConfig(
+    layer: any,
+    defaultCamera?: Camera | null,
+    canvasWidth: number = 1920,
+    canvasHeight: number = 1080
+  ): any {
+    const baseConfig = {
+      type: layer.type || 'image',
+      z_index: layer.zIndex,
+      mode: layer.mode || 'draw'
+    }
+
+    // Calculer la position une seule fois
+    const position = this.getLayerPositionInCamera(layer, defaultCamera, canvasWidth, canvasHeight)
+
+    switch (layer.type) {
+      case 'text':
+        return {
+          ...baseConfig,
+          text_config: {
+            text: layer.text_config.text,
+            font: layer.text_config.font || 'DejaVuSans',
+            size: layer.text_config.size || 32,
+            style: layer.text_config.style || 'normal',
+            color: layer.text_config.color || '#000000',
+            align: layer.text_config.align || 'left',
+            position
+          },
+          ...(layer.animationType && {
+            entrance_animation: {
+              type: layer.animationType,
+              duration: layer.animationSpeed || 1
+            }
+          })
+        }
+
+      case 'arrow':
+        return {
+          ...baseConfig,
+          arrow_config: {
+            start: this.transformPoint(layer.arrowStart || [0, 0], defaultCamera, canvasWidth, canvasHeight),
+            end: this.transformPoint(layer.arrowEnd || [100, 100], defaultCamera, canvasWidth, canvasHeight),
+            color: layer.arrowColor || '#000000',
+            fill_color: layer.arrowFillColor || '#666666',
+            stroke_width: layer.strokeWidth || 2,
+            arrow_size: layer.arrowSize || 20,
+            duration: layer.arrowDuration || 1
+          },
+          ...(layer.animationType && {
+            entrance_animation: {
+              type: layer.animationType,
+              duration: layer.animationSpeed || 1
+            }
+          })
+        }
+
+      case 'shape':
+        return {
+          ...baseConfig,
+          shape_config: {
+            shape: layer.shapeName || 'rectangle',
+            color: layer.shapeColor || '#000000',
+            fill_color: layer.shapeFillColor || '#cccccc',
+            stroke_width: layer.strokeWidth || 2,
+            position,
+            width: layer.width ? layer.width * (defaultCamera?.zoom || 1) : 100,
+            height: layer.height ? layer.height * (defaultCamera?.zoom || 1) : 100
+          },
+          ...(layer.animationType && {
+            entrance_animation: {
+              type: layer.animationType,
+              duration: layer.animationSpeed || 1
+            }
+          })
+        }
+
+      case 'image':
+      default:
+        return {
+          ...baseConfig,
+          image_path: layer.image_path || '',
+          position,
+          ...(layer.animationType && {
+            entrance_animation: {
+              type: layer.animationType,
+              duration: layer.animationSpeed || 1
+            }
+          })
+        }
+    }
+  }
+
+  /**
+   * Transforme un point [x, y] du canvas vers le viewport de la caméra
+   * puis projette vers la scène finale (1920x1080)
+   */
+  private transformPoint(
+    point: [number, number],
+    camera?: Camera | null,
+    canvasWidth: number = 1920,
+    canvasHeight: number = 1080
+  ): [number, number] {
+    if (!camera || !camera.position) return point
+
+    const cameraPosPixels = {
+      x: camera.position.x * canvasWidth,
+      y: camera.position.y * canvasHeight
+    }
+
+    const zoom = camera.zoom || 1
+    const viewportWidth = (camera.width || 800) / zoom
+    const viewportHeight = (camera.height || 450) / zoom
+
+    const cameraTopLeftX = cameraPosPixels.x - viewportWidth / 2
+    const cameraTopLeftY = cameraPosPixels.y - viewportHeight / 2
+
+    // Position dans le viewport
+    const posInViewport = [(point[0] - cameraTopLeftX) * zoom, (point[1] - cameraTopLeftY) * zoom]
+
+    // Projection vers la scène finale
+    const scaleX = 1920 / (camera.width || 800)
+    const scaleY = 1080 / (camera.height || 450)
+
+    return [posInViewport[0] * scaleX, posInViewport[1] * scaleY]
+  }
+
+  // Dans WhiteboardCliService.ts
+
+  private getLayerPositionInCamera(
+    layer: any,
+    camera?: Camera | null,
+    canvasWidth: number = 1920,
+    canvasHeight: number = 1080
+  ): { x: number; y: number } {
+    // 1. DÉTERMINER LES DIMENSIONS DE BASE (dans l'espace canvas original)
+    // C'est essentiel pour calculer l'offset du centre vers le coin supérieur gauche.
+    const layerWidthCanvas = layer.width || 0
+    const layerHeightCanvas = layer.height || 0
+    console.log('[Position] Calculating position for layer:', layer)
+
+    // 2. Position de départ (le centre dans l'éditeur)
+    const layerPos = layer.position || { x: 0, y: 0 }
+
+    // --- LOGIQUE SANS CAMÉRA ---
+    if (!camera || !camera.position) {
+      // Si pas de caméra et que le point est le centre, décaler vers le coin supérieur gauche
+      if (layerWidthCanvas > 0) {
+        return {
+          x: layerPos.x - layerWidthCanvas / 2,
+          y: layerPos.y - layerHeightCanvas / 2
+        }
+      }
+      return layerPos // Retourne la position (qui est le centre) si pas de dimensions d'offset
+    }
+    // --- FIN LOGIQUE SANS CAMÉRA ---
+
+    // 3. PROJECTION DU CENTRE DU LAYER (code original)
+    const cameraPosPixels = {
+      x: camera.position.x * canvasWidth,
+      y: camera.position.y * canvasHeight
+    }
+
+    const zoom = camera.zoom || 1
+    const cameraPhysicalWidth = camera.width || 800
+    const cameraPhysicalHeight = camera.height || 450
+
+    const viewportWidth = cameraPhysicalWidth / zoom
+    const viewportHeight = cameraPhysicalHeight / zoom
+
+    const cameraTopLeftX = cameraPosPixels.x - viewportWidth / 2
+    const cameraTopLeftY = cameraPosPixels.y - viewportHeight / 2
+
+    const posInViewport = {
+      x: (layerPos.x - cameraTopLeftX) * zoom,
+      y: (layerPos.y - cameraTopLeftY) * zoom
+    }
+
+    const scaleX = 1920 / cameraPhysicalWidth
+    const scaleY = 1080 / cameraPhysicalHeight
+
+    // finalPosCenter est le CENTRE projeté dans le canvas 1920x1080
+    const finalPosCenter = {
+      x: posInViewport.x * scaleX,
+      y: posInViewport.y * scaleY
+    }
+
+    // 4. CALCUL DES DIMENSIONS ET DÉCALAGE VERS LE COIN SUPÉRIEUR GAUCHE
+
+    // Calcul des dimensions finales après zoom et projection
+    const layerWidthFinal = layerWidthCanvas * zoom * scaleX
+    const layerHeightFinal = layerHeightCanvas * zoom * scaleY
+
+    // Soustraire la moitié des dimensions finales du centre projeté
+    // Cela nous donne la position du COIN SUPÉRIEUR GAUCHE, que le CLI attend
+    const finalPosTopLeft = {
+      x: finalPosCenter.x - layerWidthFinal / 2,
+      y: finalPosCenter.y - layerHeightFinal / 2
+    }
+
+    // Pour le debug:
+    // console.log(`[Position] Final position (Top-Left): (${finalPosTopLeft.x.toFixed(2)}, ${finalPosTopLeft.y.toFixed(2)})`)
+
+    return finalPosTopLeft
+  }
   /**
    * Upload video to MinIO storage and return public URL
    */
@@ -211,13 +440,24 @@ export class WhiteboardCliService {
     const configPath = `/tmp/preview_${configId}_config.json`
     let childProcess: any = null
     let timeoutHandle: NodeJS.Timeout | null = null
+    // Persiste une copie du JSON pour le debug dans le dossier du projet
+    const debugDir = './preview-debug'
+    const debugPath = `${debugDir}/preview_debug_${Date.now()}.json`
     let hasCompleted = false
 
     try {
+      console.info(`[Whiteboard] Generated config: ${JSON.stringify(config)}`)
       await writeFile(configPath, JSON.stringify(config))
       console.info(`[Whiteboard] Config file created: ${configPath}`)
 
       const preset = QUALITY_PRESETS[options.quality]
+      // Crée le dossier si nécessaire
+      try {
+        await import('node:fs/promises').then((fs) => fs.mkdir(debugDir, { recursive: true }))
+      } catch {}
+      await writeFile(debugPath, JSON.stringify(config, null, 2))
+      console.info(`[Whiteboard] Debug config persisted: ${debugPath}`)
+
       const args = [
         this.scriptPath,
         '--config',
@@ -251,6 +491,7 @@ export class WhiteboardCliService {
         let outputPath = ''
         let lastProgress = 0
         let errorOutput = ''
+        let stdoutBuffer = ''
 
         const cleanup = () => {
           if (timeoutHandle) {
@@ -281,6 +522,7 @@ export class WhiteboardCliService {
 
         childProcess.stdout.on('data', (data: any) => {
           const output = data.toString()
+          stdoutBuffer += output
           console.info(`[Whiteboard] ${output.trim()}`)
 
           const progressMatch = output.match(/Progress: (\d+)%/)
@@ -292,23 +534,6 @@ export class WhiteboardCliService {
                 progress,
                 currentStep: `Rendering video: ${progress}%`
               })
-            }
-          }
-
-          // Extract video paths - prioritize combined.mp4 (final video)
-          // Look for the actual combined video file path
-          if (output.includes('combined.mp4')) {
-            const pathMatch = output.match(/\/.+?combined\.mp4/)
-            if (pathMatch) {
-              outputPath = pathMatch[0]
-              console.info(`[Whiteboard] ✅ Final video path (COMBINED): ${outputPath}`)
-            }
-          } else if (output.includes('.mp4') && !outputPath) {
-            // Fallback: capture first .mp4 if no combined found yet
-            const pathMatch = output.match(/\/.+?\.mp4/)
-            if (pathMatch) {
-              outputPath = pathMatch[0]
-              console.info(`[Whiteboard] 📹 Intermediate video path: ${outputPath}`)
             }
           }
 
@@ -333,11 +558,23 @@ export class WhiteboardCliService {
           }
 
           // Wait a brief moment to ensure all stdout data has been processed
-          // This is necessary because some final messages may be printed after the process exits
           await new Promise((resolve) => setTimeout(resolve, 200))
 
           hasCompleted = true
           cleanup()
+
+          // Parse complete stdout buffer for video path
+          const combinedMatch = stdoutBuffer.match(/\/.+?combined\.mp4/)
+          if (combinedMatch) {
+            outputPath = combinedMatch[0]
+            console.info(`[Whiteboard] ✅ Final video path (COMBINED): ${outputPath}`)
+          } else {
+            const fallbackMatch = stdoutBuffer.match(/\/.+?\.mp4/)
+            if (fallbackMatch) {
+              outputPath = fallbackMatch[0]
+              console.info(`[Whiteboard] 📹 Video path (fallback): ${outputPath}`)
+            }
+          }
 
           try {
             await unlink(configPath)

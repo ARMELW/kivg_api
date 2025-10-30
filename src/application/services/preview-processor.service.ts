@@ -39,13 +39,13 @@ export class PreviewProcessorService {
    */
   start(): void {
     if (this.isRunning) {
-      console.warn('[PREVIEW PROCESSOR] ⚠️  Preview processor is already running')
+      //  console.warn('[PREVIEW PROCESSOR] ⚠️  Preview processor is already running')
       return
     }
 
     this.isRunning = true
-    console.info('[PREVIEW PROCESSOR] 🚀 Starting preview processor...')
-    console.info(`[PREVIEW PROCESSOR] ⏱️  Processing interval: every ${this.PROCESS_INTERVAL}ms`)
+    // console.info('[PREVIEW PROCESSOR] 🚀 Starting preview processor...')
+    // console.info(`[PREVIEW PROCESSOR] ⏱️  Processing interval: every ${this.PROCESS_INTERVAL}ms`)
 
     // Periodically try to process next job
     this.processingInterval = setInterval(() => {
@@ -54,7 +54,7 @@ export class PreviewProcessorService {
       })
     }, this.PROCESS_INTERVAL)
 
-    console.info('[PREVIEW PROCESSOR] ✅ Preview processor started successfully')
+    // console.info('[PREVIEW PROCESSOR] ✅ Preview processor started successfully')
   }
 
   /**
@@ -66,7 +66,7 @@ export class PreviewProcessorService {
     }
 
     this.isRunning = false
-    console.info('[PREVIEW PROCESSOR] 🛑 Stopping preview processor...')
+    // console.info('[PREVIEW PROCESSOR] 🛑 Stopping preview processor...')
 
     if (this.processingInterval) {
       clearInterval(this.processingInterval)
@@ -103,7 +103,7 @@ export class PreviewProcessorService {
       }
 
       if (!job) {
-        console.info('[PREVIEW PROCESSOR] ℹ️  No job available in queue, skipping iteration')
+        // console.info('[PREVIEW PROCESSOR] ℹ️  No job available in queue, skipping iteration')
         return
       }
     }
@@ -120,48 +120,48 @@ export class PreviewProcessorService {
     }
 
     try {
-      console.info(`[PREVIEW PROCESSOR] ▶️  Processing job: ${previewId}`)
+      // console.info(`[PREVIEW PROCESSOR] ▶️  Processing job: ${previewId}`)
 
       // Mark as processing (if method exists)
       await callMaybeAsync(this.queueService, 'markProcessing', previewId)
 
       // Update preview status
-      console.info(`[PREVIEW PROCESSOR] 📝 Updating status to 'processing': ${previewId}`)
+      // console.info(`[PREVIEW PROCESSOR] 📝 Updating status to 'processing': ${previewId}`)
       await this.previewRepository.updateStatus(previewId, 'processing')
       await this.previewRepository.updateProgress(previewId, 10, 'Loading scene...')
-      console.info(`[PREVIEW_PROCESSOR] ✔️  Status updated, progress: 10%`)
+      // console.info(`[PREVIEW_PROCESSOR] ✔️  Status updated, progress: 10%`)
 
       // Get scene
-      console.info(`[PREVIEW PROCESSOR] 🔍 Fetching scene: ${sceneId}`)
+      // console.info(`[PREVIEW PROCESSOR] 🔍 Fetching scene: ${sceneId}`)
       const scene = await this.sceneRepository.findById(sceneId)
       if (!scene) {
         throw new Error('Scene not found')
       }
-      console.info(`[PREVIEW_PROCESSOR] ✔️  Scene loaded`)
+      // console.info(`[PREVIEW_PROCESSOR] ✔️  Scene loaded`)
 
       // Generate config
-      console.info(`[PREVIEW_PROCESSOR] ⚙️  Generating whiteboard config...`)
+      // console.info(`[PREVIEW_PROCESSOR] ⚙️  Generating whiteboard config...`)
       await this.previewRepository.updateProgress(previewId, 20, 'Generating config...')
       const config = this.whiteboardCliService.generateConfig(scene)
-      console.info(`[PREVIEW_PROCESSOR] ✔️  Config generated`)
+      // console.info(`[PREVIEW_PROCESSOR] ✔️  Config generated`,config)
 
       // Check if whiteboard CLI is available
-      console.info(`[PREVIEW_PROCESSOR] 🔎 Checking whiteboard CLI availability...`)
+      // console.info(`[PREVIEW_PROCESSOR] 🔎 Checking whiteboard CLI availability...`)
       const available = await this.whiteboardCliService.isAvailable()
       if (!available) {
         throw new Error('Whiteboard CLI is not available')
       }
-      console.info(`[PREVIEW_PROCESSOR] ✔️  Whiteboard CLI is available`)
+      // console.info(`[PREVIEW_PROCESSOR] ✔️  Whiteboard CLI is available`)
 
       // Execute generation
-      console.info(`[PREVIEW_PROCESSOR] 🎬 Starting video rendering for ${previewId}...`)
+      // console.info(`[PREVIEW_PROCESSOR] 🎬 Starting video rendering for ${previewId}...`)
       await this.previewRepository.updateProgress(previewId, 30, 'Starting rendering...')
       const whiteboardOptions: any = options || { quality: 'standard', aspectRatio: '16:9' }
       const outputPath = await this.whiteboardCliService.execute(
         config,
         whiteboardOptions,
         (progress: { progress: number; currentStep: string }) => {
-          console.info(`[PREVIEW_PROCESSOR] 📊 Progress: ${progress.progress}% - ${progress.currentStep}`)
+          // console.info(`[PREVIEW_PROCESSOR] 📊 Progress: ${progress.progress}% - ${progress.currentStep}`)
           this.previewRepository
             .updateProgress(previewId, 30 + (progress.progress * 0.7) / 100, progress.currentStep)
             .catch((error) => {
@@ -171,26 +171,26 @@ export class PreviewProcessorService {
       )
 
       // Mark as completed
-      console.info(`[PREVIEW_PROCESSOR] 🎉 Video rendering complete: ${outputPath}`)
+      // console.info(`[PREVIEW_PROCESSOR] 🎉 Video rendering complete: ${outputPath}`)
       await this.previewRepository.updateStatus(previewId, 'completed', outputPath)
-      console.info(`[PREVIEW_PROCESSOR] 📝 Status updated to 'completed'`)
+      // console.info(`[PREVIEW_PROCESSOR] 📝 Status updated to 'completed'`)
 
       // Cache the preview
-      console.info(`[PREVIEW_PROCESSOR] 💾 Caching preview...`)
+      // console.info(`[PREVIEW_PROCESSOR] 💾 Caching preview...`)
       const preview = await this.previewRepository.findById(previewId)
       if (preview) {
         const cacheKey = `preview:${previewId}:status`
         await this.cacheService.set(cacheKey, preview, 3600) // Cache for 1 hour
       }
-      console.info(`[PREVIEW_PROCESSOR] ✔️  Preview cached`)
+      // console.info(`[PREVIEW_PROCESSOR] ✔️  Preview cached`)
 
-      console.info(`[PREVIEW_PROCESSOR] ✅ Preview ${previewId} generated successfully!`)
+      // console.info(`[PREVIEW_PROCESSOR] ✅ Preview ${previewId} generated successfully!`)
     } catch (error: any) {
       console.error(`[PREVIEW_PROCESSOR] ❌ Failed to generate preview ${previewId}:`, error?.message || error)
 
       // Update with error
       await this.previewRepository.updateStatus(previewId, 'failed', undefined, error?.message || 'Unknown error')
-      console.info(`[PREVIEW_PROCESSOR] 📝 Status updated to 'failed' with error message`)
+      // console.info(`[PREVIEW_PROCESSOR] 📝 Status updated to 'failed' with error message`)
     } finally {
       // Mark as not processing (if method exists)
       await callMaybeAsync(this.queueService, 'markComplete', previewId)
