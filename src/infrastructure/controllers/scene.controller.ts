@@ -1,5 +1,6 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
+import { LayerSchema } from '@/domain/models/scene.model'
 import type { Routes } from '@/domain/types'
 import { SceneRepository } from '../repositories/scene.repository'
 
@@ -32,7 +33,7 @@ export class SceneController implements Routes {
                   content: z.string().optional(),
                   duration: z.number().int().optional().default(10),
                   backgroundImage: z.string().optional(),
-                  layers: z.array(z.any()).optional().default([]),
+                  layers: z.array(LayerSchema).optional().default([]),
                   cameras: z.array(z.any()).optional().default([]),
                   transitionType: z.enum(['none', 'fade', 'slide']).optional().default('fade')
                 })
@@ -225,7 +226,7 @@ export class SceneController implements Routes {
                   content: z.string().optional(),
                   duration: z.number().int().optional(),
                   backgroundImage: z.string().optional(),
-                  layers: z.array(z.any()).optional(),
+                  layers: z.array(LayerSchema).optional(),
                   cameras: z.array(z.any()).optional(),
                   transitionType: z.enum(['none', 'fade', 'slide']).optional()
                 })
