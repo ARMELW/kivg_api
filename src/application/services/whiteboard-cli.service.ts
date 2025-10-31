@@ -204,7 +204,13 @@ export class WhiteboardCliService {
   ): any {
     // Calculer la position finale basée sur camera_position (de la caméra par défaut)
     // et la transformer pour la caméra actuelle
-    const finalDimensions = this.calculateFinalDimensions(layer, defaultCamera, currentCamera, canvasWidth, canvasHeight)
+    const finalDimensions = this.calculateFinalDimensions(
+      layer,
+      defaultCamera,
+      currentCamera,
+      canvasWidth,
+      canvasHeight
+    )
     const finalPosition = this.calculateFinalPosition(layer, defaultCamera, currentCamera, canvasWidth, canvasHeight)
     console.log('Final dimensions:')
     const baseConfig = {
@@ -222,7 +228,9 @@ export class WhiteboardCliService {
         x: layer.camera_position.x,
         y: layer.camera_position.y
       },
-      entrance_animation: layer.entrance_animation ?? (layer.animationType ? { type: layer.animationType, duration: layer.animationSpeed || 1 } : undefined),
+      entrance_animation:
+        layer.entrance_animation ??
+        (layer.animationType ? { type: layer.animationType, duration: layer.animationSpeed || 1 } : undefined),
       exit_animation: layer.exit_animation ?? undefined,
       morph: layer.morph ?? undefined
     }
@@ -246,8 +254,20 @@ export class WhiteboardCliService {
         return {
           ...baseConfig,
           arrow_config: {
-            start: this.transformPoint(layer.arrowStart || [0, 0], defaultCamera, currentCamera, canvasWidth, canvasHeight),
-            end: this.transformPoint(layer.arrowEnd || [100, 100], defaultCamera, currentCamera, canvasWidth, canvasHeight),
+            start: this.transformPoint(
+              layer.arrowStart || [0, 0],
+              defaultCamera,
+              currentCamera,
+              canvasWidth,
+              canvasHeight
+            ),
+            end: this.transformPoint(
+              layer.arrowEnd || [100, 100],
+              defaultCamera,
+              currentCamera,
+              canvasWidth,
+              canvasHeight
+            ),
             color: layer.arrowColor || '#000000',
             fill_color: layer.arrowFillColor || '#666666',
             stroke_width: layer.strokeWidth || 2,
