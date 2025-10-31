@@ -165,6 +165,7 @@ export class SceneRepository implements SceneRepositoryInterface {
   }
 
   private mapToScene(data: any): Scene {
+    //  console.log('Mapping scene data:', data)
     return {
       id: data.id,
       projectId: data.projectId,

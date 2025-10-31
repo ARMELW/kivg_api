@@ -307,7 +307,7 @@ export class SceneController implements Routes {
                   content: z.string().optional(),
                   duration: z.number().int().optional(),
                   backgroundImage: z.string().optional(),
-                  layers: z.array(LayerSchema).optional(),
+                  layers: z.array(z.any()).optional(),
                   cameras: z.array(z.any()).optional(),
                   transitionType: z.enum(['none', 'fade', 'slide']).optional()
                 })

@@ -20,6 +20,15 @@ type PreviewJob = {
  * Runs as a background worker/scheduler
  */
 export class PreviewProcessorService {
+  /**
+   * Normalise les layers pour garantir que zIndex est toujours défini (nombre)
+   */
+  private normalizeLayers(layers: any[]): any[] {
+    return layers.map((layer) => ({
+      ...layer,
+      zIndex: typeof layer.zIndex === 'number' ? layer.zIndex : 0
+    }))
+  }
   private isRunning = false
   // use ReturnType<typeof setInterval> for platform compatibility
   private processingInterval: ReturnType<typeof setInterval> | null = null
@@ -78,6 +87,8 @@ export class PreviewProcessorService {
    * Process the next job in queue
    */
   async processNextJob(job?: PreviewJob): Promise<void> {
+    // Sauvegarde la scène brute dans un fichier JSON pour debug
+
     // If no job passed, try to retrieve one from the queue service using common method names.
     if (!job) {
       // Try common method names on the queue service without assuming a strict interface
@@ -139,6 +150,10 @@ export class PreviewProcessorService {
       }
       // console.info(`[PREVIEW_PROCESSOR] ✔️  Scene loaded`)
 
+      // Normalise les layers avant de générer le config
+      if (scene.layers && Array.isArray(scene.layers)) {
+        scene.layers = this.normalizeLayers(scene.layers)
+      }
       // Generate config
       // console.info(`[PREVIEW_PROCESSOR] ⚙️  Generating whiteboard config...`)
       await this.previewRepository.updateProgress(previewId, 20, 'Generating config...')

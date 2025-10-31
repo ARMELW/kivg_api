@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { readFile, unlink, writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import type { Camera, Scene } from '@/domain/models/scene.model'
@@ -114,6 +115,23 @@ const QUALITY_PRESETS = {
 }
 
 export class WhiteboardCliService {
+  /**
+   * Sauvegarde la scène brute dans un fichier JSON pour debug (synchrone, non bloquant pour le reste du code)
+   */
+  static saveSceneDebug(scene: Scene) {
+    try {
+      const debugDir = './preview-debug'
+      if (!existsSync(debugDir)) {
+        mkdirSync(debugDir, { recursive: true })
+      }
+      const debugScenePath = `${debugDir}/scene_brute_${Date.now()}.json`
+      writeFileSync(debugScenePath, JSON.stringify(scene, null, 2))
+      // Optionnel: log le chemin du fichier
+      // console.info(`[PREVIEW_PROCESSOR] Scene sauvegardée: ${debugScenePath}`)
+    } catch (error) {
+      console.warn('[PREVIEW_PROCESSOR] Impossible de sauvegarder la scène pour debug:', error)
+    }
+  }
   private pythonPath: string
   private scriptPath: string
   private storageService: StorageService
@@ -135,20 +153,23 @@ export class WhiteboardCliService {
     // Group layers into slides (one slide per camera if available)
     let slides: any[] = []
 
+    // Pour éviter de bloquer le script, la sauvegarde doit être appelée explicitement avant generateConfig :
+    // WhiteboardCliService.saveSceneDebug(scene)
     let defaultCamera: Camera | null = null
     if (scene.sceneCameras && scene.sceneCameras.length > 0) {
       scene.cameras = scene.sceneCameras
       // Find default camera (isDefault: true), fallback to first
       defaultCamera = scene.sceneCameras.find((cam: any) => cam.isDefault) || scene.sceneCameras[0]
-      console.log('Default camera for layer positioning:', defaultCamera)
+      //console.log('Default camera for layer positioning:', defaultCamera)
 
       // Use cameras as slide boundaries
       slides = scene.sceneCameras.map((camera: any, index: number) => ({
         index,
         duration: camera.duration || scene.slideDuration || 3,
         skip_rate: camera.pauseDuration ? Math.ceil(camera.pauseDuration) : 10,
+        // Clone and map layers for the current camera context
         layers: scene.layers.map((layer: any) =>
-          this.mapLayerToConfig(layer, defaultCamera, this.canvasWidth, this.canvasHeight)
+          this.mapLayerToConfig({ ...layer }, defaultCamera, this.canvasWidth, this.canvasHeight)
         )
       }))
     } else {
@@ -159,7 +180,7 @@ export class WhiteboardCliService {
           duration: scene.duration || 3,
           skip_rate: 8,
           layers: scene.layers.map((layer: any) =>
-            this.mapLayerToConfig(layer, null, this.canvasWidth, this.canvasHeight)
+            this.mapLayerToConfig({ ...layer }, null, this.canvasWidth, this.canvasHeight)
           )
         }
       ]
@@ -192,14 +213,18 @@ export class WhiteboardCliService {
     canvasWidth: number = 1920,
     canvasHeight: number = 1080
   ): any {
+    // Calculer la position et mettre à jour les dimensions finales (layer.width/height)
+    const position = this.getLayerPositionInCamera(layer, defaultCamera, canvasWidth, canvasHeight)
+
+    // Les propriétés layer.width et layer.height contiennent maintenant les dimensions projetées finales
+
     const baseConfig = {
       type: layer.type || 'image',
-      z_index: layer.zIndex,
-      mode: layer.mode || 'draw'
+      z_index: layer.zIndex ?? 0,
+      mode: layer.mode || 'draw',
+      width: layer.width || undefined, // Utilise la largeur finale calculée
+      height: layer.height || undefined // Utilise la hauteur finale calculée
     }
-
-    // Calculer la position une seule fois
-    const position = this.getLayerPositionInCamera(layer, defaultCamera, canvasWidth, canvasHeight)
 
     switch (layer.type) {
       case 'text':
@@ -251,8 +276,9 @@ export class WhiteboardCliService {
             fill_color: layer.shapeFillColor || '#cccccc',
             stroke_width: layer.strokeWidth || 2,
             position,
-            width: layer.width ? layer.width * (defaultCamera?.zoom || 1) : 100,
-            height: layer.height ? layer.height * (defaultCamera?.zoom || 1) : 100
+            // Pour les formes, on utilise directement les dimensions finales calculées par getLayerPositionInCamera
+            width: layer.width || 100,
+            height: layer.height || 100
           },
           ...(layer.animationType && {
             entrance_animation: {
@@ -264,10 +290,13 @@ export class WhiteboardCliService {
 
       case 'image':
       default:
+        // Pour les images, on utilise simplement les dimensions finales et la position calculées
         return {
           ...baseConfig,
           image_path: layer.image_path || '',
           position,
+          width: layer.width,
+          height: layer.height,
           ...(layer.animationType && {
             entrance_animation: {
               type: layer.animationType,
@@ -282,111 +311,145 @@ export class WhiteboardCliService {
    * Transforme un point [x, y] du canvas vers le viewport de la caméra
    * puis projette vers la scène finale (1920x1080)
    */
+
+  /**
+   * Transforme un point [x, y] du canvas (éditeur) vers les coordonnées de la scène finale (1920x1080)
+   * en tenant compte du zoom et de la position de la caméra.
+   */
   private transformPoint(
     point: [number, number],
     camera?: Camera | null,
     canvasWidth: number = 1920,
     canvasHeight: number = 1080
   ): [number, number] {
-    if (!camera || !camera.position) return point
+    if (!camera || !camera.position) return point // Retourne le point si pas de caméra
 
+    const zoom = camera.scale || 1
+    const cameraPhysicalWidth = camera.width || 800
+    const cameraPhysicalHeight = camera.height || 450
+
+    // 1. Dimensions du viewport (ce que la caméra "voit" dans l'espace de l'éditeur)
+    const viewportWidth = cameraPhysicalWidth / zoom
+    const viewportHeight = cameraPhysicalHeight / zoom
+
+    // 2. Position du coin supérieur gauche de la caméra dans l'espace de l'éditeur (en pixels)
     const cameraPosPixels = {
       x: camera.position.x * canvasWidth,
       y: camera.position.y * canvasHeight
     }
-
-    const zoom = camera.zoom || 1
-    const viewportWidth = (camera.width || 800) / zoom
-    const viewportHeight = (camera.height || 450) / zoom
-
     const cameraTopLeftX = cameraPosPixels.x - viewportWidth / 2
     const cameraTopLeftY = cameraPosPixels.y - viewportHeight / 2
 
-    // Position dans le viewport
-    const posInViewport = [(point[0] - cameraTopLeftX) * zoom, (point[1] - cameraTopLeftY) * zoom]
+    // 3. Position du point relative au coin supérieur gauche de la caméra (non zoomée)
+    const posRelativeToCameraTopLeft = {
+      x: point[0] - cameraTopLeftX,
+      y: point[1] - cameraTopLeftY
+    }
 
-    // Projection vers la scène finale
-    const scaleX = 1920 / (camera.width || 800)
-    const scaleY = 1080 / (camera.height || 450)
+    // 4. Facteur de projection : met à l'échelle le viewport zoomé vers 1920x1080
+    // Ce facteur assure la cohérence avec getLayerPositionInCamera.
+    const projectionScaleX = canvasWidth / viewportWidth
+    const projectionScaleY = canvasHeight / viewportHeight
 
-    return [posInViewport[0] * scaleX, posInViewport[1] * scaleY]
+    // 5. Application de la projection : coordonnées finales dans l'espace 1920x1080
+    const finalPoint = [
+      posRelativeToCameraTopLeft.x * projectionScaleX,
+      posRelativeToCameraTopLeft.y * projectionScaleY
+    ]
+
+    return finalPoint as [number, number]
   }
-
-  // Dans WhiteboardCliService.ts
-
+  /**
+   * Calcule la position finale (coin supérieur gauche) et les dimensions finales
+   * d'un calque après projection par la caméra.
+   * La position et les dimensions sont enregistrées dans l'objet 'layer' temporaire.
+   */
   private getLayerPositionInCamera(
     layer: any,
     camera?: Camera | null,
     canvasWidth: number = 1920,
     canvasHeight: number = 1080
   ): { x: number; y: number } {
-    // 1. DÉTERMINER LES DIMENSIONS DE BASE (dans l'espace canvas original)
-    // C'est essentiel pour calculer l'offset du centre vers le coin supérieur gauche.
-    const layerWidthCanvas = layer.width || 0
-    const layerHeightCanvas = layer.height || 0
-    console.log('[Position] Calculating position for layer:', layer)
+    // Dimensions du calque dans l'espace de l'éditeur (déjà scalées par layer.scale)
 
-    // 2. Position de départ (le centre dans l'éditeur)
+    const layerWidthDisplayed = layer.width || 0
+    const layerHeightDisplayed = layer.height || 0
+
+    // Position du centre du calque dans l'éditeur (React Konva)
     const layerPos = layer.position || { x: 0, y: 0 }
 
-    // --- LOGIQUE SANS CAMÉRA ---
+    // 1. LOGIQUE SANS CAMÉRA : Conversion du centre en coin supérieur gauche
     if (!camera || !camera.position) {
-      // Si pas de caméra et que le point est le centre, décaler vers le coin supérieur gauche
-      if (layerWidthCanvas > 0) {
+      if (layerWidthDisplayed > 0 && layerHeightDisplayed > 0) {
+        // Mise à jour des dimensions finales (inchangées)
+        layer.width = layerWidthDisplayed
+        layer.height = layerHeightDisplayed
         return {
-          x: layerPos.x - layerWidthCanvas / 2,
-          y: layerPos.y - layerHeightCanvas / 2
+          x: layerPos.x - layerWidthDisplayed / 2,
+          y: layerPos.y - layerHeightDisplayed / 2
         }
       }
-      return layerPos // Retourne la position (qui est le centre) si pas de dimensions d'offset
-    }
-    // --- FIN LOGIQUE SANS CAMÉRA ---
-
-    // 3. PROJECTION DU CENTRE DU LAYER (code original)
-    const cameraPosPixels = {
-      x: camera.position.x * canvasWidth,
-      y: camera.position.y * canvasHeight
+      layer.width = 0
+      layer.height = 0
+      return layerPos
     }
 
-    const zoom = camera.zoom || 1
+    // --- LOGIQUE AVEC CAMÉRA ---
+
+    const zoom = camera.scale || 1
     const cameraPhysicalWidth = camera.width || 800
     const cameraPhysicalHeight = camera.height || 450
 
     const viewportWidth = cameraPhysicalWidth / zoom
     const viewportHeight = cameraPhysicalHeight / zoom
 
+    // Position du coin supérieur gauche de la caméra dans l'espace de l'éditeur (en pixels)
+    const cameraPosPixels = {
+      x: camera.position.x * canvasWidth,
+      y: camera.position.y * canvasHeight
+    }
+
     const cameraTopLeftX = cameraPosPixels.x - viewportWidth / 2
     const cameraTopLeftY = cameraPosPixels.y - viewportHeight / 2
 
-    const posInViewport = {
-      x: (layerPos.x - cameraTopLeftX) * zoom,
-      y: (layerPos.y - cameraTopLeftY) * zoom
+    // 1. Position du CENTRE du calque RELATIVE au coin supérieur gauche de la caméra (non zoomée)
+    const centerPosRelativeToCameraTopLeft = {
+      x: layerPos.x - cameraTopLeftX,
+      y: layerPos.y - cameraTopLeftY
     }
 
-    const scaleX = 1920 / cameraPhysicalWidth
-    const scaleY = 1080 / cameraPhysicalHeight
+    // 2. Facteur de projection (met à l'échelle le viewport de la caméra au 1920x1080)
+    const projectionScaleX = canvasWidth / viewportWidth
+    const projectionScaleY = canvasHeight / viewportHeight
 
-    // finalPosCenter est le CENTRE projeté dans le canvas 1920x1080
+    // Le centre du calque projeté dans l'espace 1920x1080 (le rendu final)
     const finalPosCenter = {
-      x: posInViewport.x * scaleX,
-      y: posInViewport.y * scaleY
+      x: centerPosRelativeToCameraTopLeft.x * projectionScaleX,
+      y: centerPosRelativeToCameraTopLeft.y * projectionScaleY
     }
 
-    // 4. CALCUL DES DIMENSIONS ET DÉCALAGE VERS LE COIN SUPÉRIEUR GAUCHE
+    // 3. Calcul des dimensions FINALES du calque (après zoom et projection)
 
-    // Calcul des dimensions finales après zoom et projection
-    const layerWidthFinal = layerWidthCanvas * zoom * scaleX
-    const layerHeightFinal = layerHeightCanvas * zoom * scaleY
+    // La nouvelle dimension affichée est l'ancienne dimension * (Facteur de projection / Zoom)
+    // C'est l'échelle totale appliquée au calque.
+    const layerWidthFinal = (layerWidthDisplayed * projectionScaleX) / zoom
+    const layerHeightFinal = (layerHeightDisplayed * projectionScaleY) / zoom
+
+    // Mise à jour des dimensions dans l'objet layer (utilisé par mapLayerToConfig)
+    layer.width = layerWidthFinal
+    layer.height = layerHeightFinal
+
+    // 4. Position Finale (Coin Supérieur Gauche)
 
     // Soustraire la moitié des dimensions finales du centre projeté
-    // Cela nous donne la position du COIN SUPÉRIEUR GAUCHE, que le CLI attend
     const finalPosTopLeft = {
       x: finalPosCenter.x - layerWidthFinal / 2,
       y: finalPosCenter.y - layerHeightFinal / 2
     }
 
-    // Pour le debug:
-    // console.log(`[Position] Final position (Top-Left): (${finalPosTopLeft.x.toFixed(2)}, ${finalPosTopLeft.y.toFixed(2)})`)
+    // Correction : éviter les valeurs négatives pour y (et x si besoin)
+    if (finalPosTopLeft.y < 0) finalPosTopLeft.y = 0
+    if (finalPosTopLeft.x < 0) finalPosTopLeft.x = 0
 
     return finalPosTopLeft
   }
@@ -395,11 +458,11 @@ export class WhiteboardCliService {
    */
   private async uploadVideoToStorage(videoPath: string): Promise<string> {
     try {
-      console.info(`[Whiteboard] Reading video file from: ${videoPath}`)
+      // console.info(`[Whiteboard] Reading video file from: ${videoPath}`)
       const videoBuffer = await readFile(videoPath)
 
       const filename = `whiteboard_${randomUUID()}.mp4`
-      console.info(`[Whiteboard] Uploading video to MinIO storage as: ${filename}`)
+      // console.info(`[Whiteboard] Uploading video to MinIO storage as: ${filename}`)
 
       const uploadResult = await this.storageService.uploadFile(videoBuffer, filename, {
         bucket: 'EXPORTS',
@@ -410,13 +473,13 @@ export class WhiteboardCliService {
         }
       })
 
-      console.info(`[Whiteboard] Video uploaded to MinIO successfully`)
-      console.info(`[Whiteboard] Public URL: ${uploadResult.url}`)
+      // console.info(`[Whiteboard] Video uploaded to MinIO successfully`)
+      // console.info(`[Whiteboard] Public URL: ${uploadResult.url}`)
 
       // Clean up local video file after upload
       try {
         await unlink(videoPath)
-        console.info(`[Whiteboard] Local video file cleaned up: ${videoPath}`)
+        // console.info(`[Whiteboard] Local video file cleaned up: ${videoPath}`)
       } catch (error) {
         console.warn(`[Whiteboard] Failed to clean up local video file: ${error}`)
       }
@@ -446,9 +509,9 @@ export class WhiteboardCliService {
     let hasCompleted = false
 
     try {
-      console.info(`[Whiteboard] Generated config: ${JSON.stringify(config)}`)
+      //console.info(`[Whiteboard] Generated config: ${JSON.stringify(config)}`)
       await writeFile(configPath, JSON.stringify(config))
-      console.info(`[Whiteboard] Config file created: ${configPath}`)
+      // console.info(`[Whiteboard] Config file created: ${configPath}`)
 
       const preset = QUALITY_PRESETS[options.quality]
       // Crée le dossier si nécessaire
@@ -456,7 +519,7 @@ export class WhiteboardCliService {
         await import('node:fs/promises').then((fs) => fs.mkdir(debugDir, { recursive: true }))
       } catch {}
       await writeFile(debugPath, JSON.stringify(config, null, 2))
-      console.info(`[Whiteboard] Debug config persisted: ${debugPath}`)
+      // console.info(`[Whiteboard] Debug config persisted: ${debugPath}`)
 
       const args = [
         this.scriptPath,
@@ -480,7 +543,7 @@ export class WhiteboardCliService {
         args.push('--no-audio')
       }
 
-      console.info(`[Whiteboard] Starting video generation with quality: ${options.quality} (${preset.description})`)
+      // console.info(`[Whiteboard] Starting video generation with quality: ${options.quality} (${preset.description})`)
 
       return await new Promise((resolve, reject) => {
         childProcess = spawn(this.pythonPath, args, {
@@ -523,7 +586,7 @@ export class WhiteboardCliService {
         childProcess.stdout.on('data', (data: any) => {
           const output = data.toString()
           stdoutBuffer += output
-          console.info(`[Whiteboard] ${output.trim()}`)
+          // console.info(`[Whiteboard] ${output.trim()}`)
 
           const progressMatch = output.match(/Progress: (\d+)%/)
           if (progressMatch) {
@@ -567,24 +630,24 @@ export class WhiteboardCliService {
           const combinedMatch = stdoutBuffer.match(/\/.+?combined\.mp4/)
           if (combinedMatch) {
             outputPath = combinedMatch[0]
-            console.info(`[Whiteboard] ✅ Final video path (COMBINED): ${outputPath}`)
+            // console.info(`[Whiteboard] ✅ Final video path (COMBINED): ${outputPath}`)
           } else {
             const fallbackMatch = stdoutBuffer.match(/\/.+?\.mp4/)
             if (fallbackMatch) {
               outputPath = fallbackMatch[0]
-              console.info(`[Whiteboard] 📹 Video path (fallback): ${outputPath}`)
+              // console.info(`[Whiteboard] 📹 Video path (fallback): ${outputPath}`)
             }
           }
 
           try {
             await unlink(configPath)
-            console.info(`[Whiteboard] Config file cleaned up`)
+            // console.info(`[Whiteboard] Config file cleaned up`)
           } catch (error) {
             console.warn(`[Whiteboard] Failed to clean up config file: ${error}`)
           }
 
           if (code === 0 && outputPath) {
-            console.info(`[Whiteboard] Video generation completed successfully: ${outputPath}`)
+            // console.info(`[Whiteboard] Video generation completed successfully: ${outputPath}`)
             try {
               const minioUrl = await this.uploadVideoToStorage(outputPath)
               resolve(minioUrl)
@@ -641,7 +704,7 @@ export class WhiteboardCliService {
    */
   isAvailable(): Promise<boolean> {
     return new Promise((resolve) => {
-      console.info('[Whiteboard] Checking availability')
+      // console.info('[Whiteboard] Checking availability')
       const childProcess = spawn(this.pythonPath, [this.scriptPath, '-h'])
       childProcess.on('close', (code) => {
         resolve(code === 0)

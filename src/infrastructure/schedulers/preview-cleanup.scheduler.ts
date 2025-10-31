@@ -20,7 +20,7 @@ export class PreviewCleanupScheduler {
       return
     }
 
-    console.info('Starting preview cleanup scheduler...')
+    // console.info('Starting preview cleanup scheduler...')
 
     // Run immediately on start
     this.runCleanup().catch(console.error)
@@ -30,7 +30,7 @@ export class PreviewCleanupScheduler {
       this.runCleanup().catch(console.error)
     }, this.CLEANUP_INTERVAL)
 
-    console.info(`Preview cleanup scheduler started. Will run every ${this.CLEANUP_INTERVAL / 1000 / 60} minutes.`)
+    // console.info(`Preview cleanup scheduler started. Will run every ${this.CLEANUP_INTERVAL / 1000 / 60} minutes.`)
   }
 
   /**
@@ -40,7 +40,7 @@ export class PreviewCleanupScheduler {
     if (this.intervalId) {
       clearInterval(this.intervalId)
       this.intervalId = null
-      console.info('Preview cleanup scheduler stopped.')
+      // console.info('Preview cleanup scheduler stopped.')
     }
   }
 
@@ -49,7 +49,7 @@ export class PreviewCleanupScheduler {
    */
   private async runCleanup(): Promise<void> {
     const startTime = Date.now()
-    console.info('[Preview Cleanup] Starting cleanup tasks...')
+    // console.info('[Preview Cleanup] Starting cleanup tasks...')
 
     try {
       // Clean up expired previews
