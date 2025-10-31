@@ -1,16 +1,22 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
+import { GetSceneProjectionUseCase } from '@/application/use-cases/scene/get-scene-projection.use-case'
 import { LayerSchema } from '@/domain/models/scene.model'
 import type { Routes } from '@/domain/types'
+import { PreviewRepository } from '../repositories/preview.repository'
 import { SceneRepository } from '../repositories/scene.repository'
 
 export class SceneController implements Routes {
   public controller: OpenAPIHono
   private sceneRepository: SceneRepository
+  private previewRepository: PreviewRepository
+  private getSceneProjectionUseCase: GetSceneProjectionUseCase
 
   constructor() {
     this.controller = new OpenAPIHono()
     this.sceneRepository = new SceneRepository()
+    this.previewRepository = new PreviewRepository()
+    this.getSceneProjectionUseCase = new GetSceneProjectionUseCase(this.previewRepository)
     this.initRoutes()
   }
 
@@ -202,6 +208,81 @@ export class SceneController implements Routes {
           })
         } catch {
           return c.json({ success: false, error: 'Failed to fetch scene' }, 400)
+        }
+      }
+    )
+
+    // Get Scene Projection (Preview for Modal)
+    this.controller.openapi(
+      createRoute({
+        method: 'get',
+        path: '/v1/scenes/{id}/projection',
+        security: [{ Bearer: [] }],
+        tags: ['Scenes'],
+        summary: 'Get scene projection (preview) for modal display',
+        description: 'Retrieves the most recent preview/projection of a scene for display in a modal',
+        request: {
+          params: z.object({
+            id: z.string().uuid()
+          })
+        },
+        responses: {
+          200: {
+            description: 'Scene projection retrieved successfully',
+            content: {
+              'application/json': {
+                schema: z.object({
+                  success: z.boolean(),
+                  data: z
+                    .object({
+                      previewId: z.string().optional(),
+                      sceneId: z.string(),
+                      status: z.string(),
+                      progress: z.number(),
+                      currentStep: z.string().optional(),
+                      previewUrl: z.string().optional(),
+                      error: z.string().optional(),
+                      createdAt: z.string().optional(),
+                      completedAt: z.string().optional()
+                    })
+                    .nullable()
+                })
+              }
+            }
+          }
+        }
+      }),
+      async (c: any) => {
+        try {
+          const user = c.get('user')
+          if (!user) {
+            return c.json({ success: false, error: 'Unauthorized' }, 401)
+          }
+
+          const { id } = c.req.param()
+
+          // Verify scene exists
+          const scene = await this.sceneRepository.findById(id)
+          if (!scene) {
+            return c.json({ success: false, error: 'Scene not found' }, 404)
+          }
+
+          // Get the projection (preview) for this scene
+          const result = await this.getSceneProjectionUseCase.execute({
+            sceneId: id,
+            userId: user.id
+          })
+
+          if (!result.success) {
+            return c.json({ success: false, error: result.error }, 400)
+          }
+
+          return c.json({
+            success: true,
+            data: result.data
+          })
+        } catch (error: any) {
+          return c.json({ success: false, error: error.message || 'Failed to get scene projection' }, 400)
         }
       }
     )
