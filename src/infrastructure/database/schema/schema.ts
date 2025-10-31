@@ -262,6 +262,7 @@ export const scenes = pgTable('scenes', {
         type: 'image' | 'text' | 'shape' | 'video' | 'audio'
         mode: 'draw' | 'static' | 'animated'
         position: { x: number; y: number }
+        cameraPosition?: { x: number; y: number }
         width: number
         height: number
         zIndex: number

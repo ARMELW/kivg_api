@@ -9,6 +9,12 @@ export const LayerSchema = z.object({
     x: z.number(),
     y: z.number()
   }),
+  cameraPosition: z
+    .object({
+      x: z.number(),
+      y: z.number()
+    })
+    .optional(),
   width: z.number().min(0),
   height: z.number().min(0),
   zIndex: z.number().int(),

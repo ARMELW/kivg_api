@@ -220,4 +220,200 @@ describe('LayerSchema', () => {
       expect(LayerSchema.safeParse(layerWithNegativeHeight).success).toBe(false)
     })
   })
+
+  describe('cameraPosition property', () => {
+    it('should accept a layer with cameraPosition', () => {
+      const layerWithCameraPosition = {
+        id: 'layer-123',
+        name: 'Test Layer',
+        type: 'text' as const,
+        mode: 'draw' as const,
+        position: { x: 960, y: 540 },
+        cameraPosition: { x: 960, y: 540 },
+        width: 300,
+        height: 57.6,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const result = LayerSchema.safeParse(layerWithCameraPosition)
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.cameraPosition).toEqual({ x: 960, y: 540 })
+      }
+    })
+
+    it('should accept a layer without cameraPosition (backward compatibility)', () => {
+      const layerWithoutCameraPosition = {
+        id: 'layer-456',
+        name: 'Old Layer',
+        type: 'image' as const,
+        mode: 'static' as const,
+        position: { x: 500, y: 300 },
+        width: 1920,
+        height: 1080,
+        zIndex: 2,
+        scale: 0.8,
+        opacity: 0.9
+      }
+
+      const result = LayerSchema.safeParse(layerWithoutCameraPosition)
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.cameraPosition).toBeUndefined()
+      }
+    })
+
+    it('should accept cameraPosition with negative values (layer outside camera viewport)', () => {
+      const layerOutsideViewport = {
+        id: 'layer-789',
+        name: 'Off-screen Layer',
+        type: 'text' as const,
+        mode: 'draw' as const,
+        position: { x: 2500, y: 1500 },
+        cameraPosition: { x: 2500, y: 1500 },
+        width: 200,
+        height: 50,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const result = LayerSchema.safeParse(layerOutsideViewport)
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.cameraPosition).toEqual({ x: 2500, y: 1500 })
+      }
+    })
+
+    it('should accept cameraPosition with decimal values', () => {
+      const layerWithDecimalCameraPosition = {
+        id: 'layer-decimal',
+        name: 'Decimal Camera Position',
+        type: 'image' as const,
+        mode: 'draw' as const,
+        position: { x: 100.5, y: 200.75 },
+        cameraPosition: { x: 100.5, y: 200.75 },
+        width: 300,
+        height: 150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const result = LayerSchema.safeParse(layerWithDecimalCameraPosition)
+
+      expect(result.success).toBe(true)
+      if (result.success) {
+        expect(result.data.cameraPosition).toEqual({ x: 100.5, y: 200.75 })
+      }
+    })
+
+    it('should reject cameraPosition with invalid structure', () => {
+      const layerWithInvalidCameraPosition = {
+        id: 'layer-invalid',
+        name: 'Invalid Camera Position',
+        type: 'text' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        cameraPosition: { x: 'invalid', y: 200 }, // Invalid: x should be number
+        width: 300,
+        height: 150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const result = LayerSchema.safeParse(layerWithInvalidCameraPosition)
+
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject cameraPosition missing x or y coordinate', () => {
+      const layerMissingX = {
+        id: 'layer-missing-x',
+        name: 'Missing X',
+        type: 'text' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        cameraPosition: { y: 200 }, // Missing x
+        width: 300,
+        height: 150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      const layerMissingY = {
+        id: 'layer-missing-y',
+        name: 'Missing Y',
+        type: 'text' as const,
+        mode: 'draw' as const,
+        position: { x: 100, y: 200 },
+        cameraPosition: { x: 100 }, // Missing y
+        width: 300,
+        height: 150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      expect(LayerSchema.safeParse(layerMissingX).success).toBe(false)
+      expect(LayerSchema.safeParse(layerMissingY).success).toBe(false)
+    })
+
+    it('should work with different layer types', () => {
+      const textLayer = {
+        id: 'text-1',
+        name: 'Text with Camera Position',
+        type: 'text' as const,
+        mode: 'draw' as const,
+        position: { x: 960, y: 540 },
+        cameraPosition: { x: 960, y: 540 },
+        width: 300,
+        height: 57.6,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1,
+        text: 'Sample text'
+      }
+
+      const imageLayer = {
+        id: 'image-1',
+        name: 'Image with Camera Position',
+        type: 'image' as const,
+        mode: 'static' as const,
+        position: { x: 700, y: 400 },
+        cameraPosition: { x: 700, y: 400 },
+        width: 1920,
+        height: 1080,
+        zIndex: 1,
+        scale: 0.5,
+        opacity: 1,
+        imagePath: 'https://example.com/image.jpg'
+      }
+
+      const shapeLayer = {
+        id: 'shape-1',
+        name: 'Shape with Camera Position',
+        type: 'shape' as const,
+        mode: 'draw' as const,
+        position: { x: 800, y: 450 },
+        cameraPosition: { x: 800, y: 450 },
+        width: 200,
+        height: 150,
+        zIndex: 1,
+        scale: 1,
+        opacity: 1
+      }
+
+      expect(LayerSchema.safeParse(textLayer).success).toBe(true)
+      expect(LayerSchema.safeParse(imageLayer).success).toBe(true)
+      expect(LayerSchema.safeParse(shapeLayer).success).toBe(true)
+    })
+  })
 })
