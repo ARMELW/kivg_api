@@ -1,5 +1,6 @@
 export * from './user.model'
 export * from './asset.model'
+export * from './shape.model'
 export * from './audio.model'
 export * from './channel.model'
 export * from './export.model'

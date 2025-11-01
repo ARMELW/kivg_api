@@ -181,6 +181,36 @@ export const assets = pgTable('assets', {
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 })
 
+// Shape Assets table
+export const shapes = pgTable('shapes', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  url: text('url').notNull(),
+  thumbnailUrl: text('thumbnail_url'),
+  type: text('type').notNull().default('svg'), // svg, path, geometric
+  size: integer('size').notNull(), // in bytes
+  width: integer('width'),
+  height: integer('height'),
+  tags: jsonb('tags').$type<string[]>().default([]),
+  category: text('category').notNull().default('other'), // basic, arrow, callout, banner, icon, decorative, other
+  shapeData: jsonb('shape_data').$type<{
+    svgContent?: string
+    pathData?: string
+    viewBox?: string
+    fill?: string
+    stroke?: string
+    strokeWidth?: number
+    isEditable?: boolean
+  }>(),
+  lastUsed: timestamp('last_used'),
+  usageCount: integer('usage_count').notNull().default(0),
+  uploadedAt: timestamp('uploaded_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+})
+
 // Channels table
 export const channels = pgTable('channels', {
   id: text('id').primaryKey(),

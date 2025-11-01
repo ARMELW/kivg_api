@@ -1,5 +1,6 @@
 export * from './user.repository.interface'
 export * from './asset.repository.interface'
+export * from './shape.repository.interface'
 export * from './audio.repository.interface'
 export * from './channel.repository.interface'
 export * from './export.repository.interface'
