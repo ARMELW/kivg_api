@@ -11,6 +11,7 @@ import {
   PricingController,
   ProjectController,
   SceneController,
+  ShapeController,
   TemplateController,
   UserApiKeysController,
   UserController
@@ -31,6 +32,7 @@ const app = new App([
   new UploadController(),
   new HealthController(),
   new AssetController(),
+  new ShapeController(),
   new AudioController(),
   new ChannelController(),
   new ExportController(),

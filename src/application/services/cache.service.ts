@@ -111,6 +111,10 @@ export const CacheKeys = {
   assets: (userId: string, params?: string) => `assets:${userId}:${params || 'all'}`,
   assetStats: (userId: string) => `asset:stats:${userId}`,
 
+  shape: (id: string) => `shape:${id}`,
+  shapes: (userId: string, params?: string) => `shapes:${userId}:${params || 'all'}`,
+  shapeStats: (userId: string) => `shape:stats:${userId}`,
+
   channel: (id: string) => `channel:${id}`,
   channels: (userId: string) => `channels:${userId}`,
   channelStats: (id: string) => `channel:stats:${id}`,

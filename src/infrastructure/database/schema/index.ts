@@ -9,6 +9,7 @@ import {
   projects,
   roles,
   scenes,
+  shapes,
   userApiKeys,
   userRoles,
   users
@@ -37,6 +38,13 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
 export const assetsRelations = relations(assets, ({ one }) => ({
   user: one(users, {
     fields: [assets.userId],
+    references: [users.id]
+  })
+}))
+
+export const shapesRelations = relations(shapes, ({ one }) => ({
+  user: one(users, {
+    fields: [shapes.userId],
     references: [users.id]
   })
 }))
