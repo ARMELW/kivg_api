@@ -156,7 +156,7 @@ export class WhiteboardCliService {
 
       slides = scene.sceneCameras.map((camera: any, index: number) => ({
         index,
-        duration: camera.duration || scene.slideDuration || 3,
+       // duration: camera.duration || scene.slideDuration || 3,
         skip_rate: camera.pauseDuration ? Math.ceil(camera.pauseDuration) : 10,
         layers: scene.layers.map((layer: any) =>
           this.mapLayerToConfig({ ...layer }, defaultCamera, camera, this.canvasWidth, this.canvasHeight)
@@ -166,7 +166,7 @@ export class WhiteboardCliService {
       slides = [
         {
           index: 0,
-          duration: scene.duration || 3,
+          //duration: scene.duration || 3,
           skip_rate: 8,
           layers: scene.layers.map((layer: any) =>
             this.mapLayerToConfig({ ...layer }, null, null, this.canvasWidth, this.canvasHeight)
@@ -212,7 +212,7 @@ export class WhiteboardCliService {
       canvasHeight
     )
     const finalPosition = this.calculateFinalPosition(layer, defaultCamera, currentCamera, canvasWidth, canvasHeight)
-    console.log('Final dimensions:')
+
     const baseConfig = {
       type: layer.type || 'image',
       z_index: layer.zIndex ?? 0,
@@ -224,10 +224,6 @@ export class WhiteboardCliService {
       source_height: 450,
       opacity: layer.opacity ?? undefined,
       skip_rate: layer.skip_rate ?? undefined,
-      position: {
-        x: layer.camera_position.x,
-        y: layer.camera_position.y
-      },
       entrance_animation:
         layer.entrance_animation ??
         (layer.animationType ? { type: layer.animationType, duration: layer.animationSpeed || 1 } : undefined),
@@ -239,14 +235,20 @@ export class WhiteboardCliService {
       case 'text':
         return {
           ...baseConfig,
+          anchor_point: 'center',
+          position: {
+            x: layer.camera_position.x,
+            y: layer.camera_position.y
+          },
+
           text_config: {
             text: layer.text_config.text,
+            font_path: `fonts/${layer.text_config.font}.ttf`,
             font: layer.text_config.font || 'DejaVuSans',
             size: layer.text_config.size || 32,
             style: layer.text_config.style || 'normal',
             color: layer.text_config.color || '#000000',
-            align: layer.text_config.align || 'left',
-            position: layer.text_config.position || { x: 0, y: 0 }
+            align: layer.text_config.align || 'left'
           }
         }
 
@@ -294,7 +296,11 @@ export class WhiteboardCliService {
       default:
         return {
           ...baseConfig,
-          image_path: layer.image_path || ''
+          image_path: layer.image_path || '',
+          position: {
+            x: layer.camera_position.x,
+            y: layer.camera_position.y
+          }
         }
     }
   }
