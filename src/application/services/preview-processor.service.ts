@@ -1,6 +1,5 @@
 import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
 import type { SceneRepositoryInterface } from '@/domain/repositories/scene.repository.interface'
-import { PreviewUploadService } from './preview-upload.service'
 import type { CacheService } from './cache.service'
 import type { PreviewQueueService } from './preview-queue.service'
 import type { WhiteboardCliService } from './whiteboard-cli.service'
@@ -35,7 +34,6 @@ export class PreviewProcessorService {
   private processingInterval: ReturnType<typeof setInterval> | null = null
   private readonly PROCESS_INTERVAL = 2000 // Check queue every 2 seconds
   private readonly MAX_RETRIES = 3
-  private uploadService: PreviewUploadService
 
   constructor(
     private readonly queueService: PreviewQueueService,
@@ -43,9 +41,7 @@ export class PreviewProcessorService {
     private readonly sceneRepository: SceneRepositoryInterface,
     private readonly cacheService: CacheService,
     private readonly whiteboardCliService: WhiteboardCliService
-  ) {
-    this.uploadService = new PreviewUploadService(previewRepository)
-  }
+  ) {}
 
   /**
    * Start the processor (call this on app startup)
@@ -59,9 +55,6 @@ export class PreviewProcessorService {
     this.isRunning = true
     // console.info('[PREVIEW PROCESSOR] 🚀 Starting preview processor...')
     // console.info(`[PREVIEW PROCESSOR] ⏱️  Processing interval: every ${this.PROCESS_INTERVAL}ms`)
-
-    // Start the background upload service
-    this.uploadService.start()
 
     // Periodically try to process next job
     this.processingInterval = setInterval(() => {
@@ -83,9 +76,6 @@ export class PreviewProcessorService {
 
     this.isRunning = false
     // console.info('[PREVIEW PROCESSOR] 🛑 Stopping preview processor...')
-
-    // Stop the background upload service
-    this.uploadService.stop()
 
     if (this.processingInterval) {
       clearInterval(this.processingInterval)
@@ -195,13 +185,10 @@ export class PreviewProcessorService {
         }
       )
 
-      // Mark as completed with temporary URL
+      // Mark as completed
       // console.info(`[PREVIEW_PROCESSOR] 🎉 Video rendering complete: ${outputPath}`)
       await this.previewRepository.updateStatus(previewId, 'completed', outputPath)
-      // console.info(`[PREVIEW_PROCESSOR] 📝 Status updated to 'completed' with temporary URL`)
-
-      // Queue the file for background upload to MinIO
-      this.uploadService.queueUpload(previewId, outputPath)
+      // console.info(`[PREVIEW_PROCESSOR] 📝 Status updated to 'completed'`)
 
       // Cache the preview
       // console.info(`[PREVIEW_PROCESSOR] 💾 Caching preview...`)

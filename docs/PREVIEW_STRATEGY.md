@@ -216,22 +216,7 @@ Set environment variables:
 ```env
 PYTHON_PATH=/usr/bin/python3
 WHITEBOARD_CLI_PATH=/opt/whiteboard-it/whiteboard_animator.py
-BASE_URL=http://localhost:3000
 ```
-
-### Temporary Preview URLs
-
-To improve preview availability speed, the system now uses temporary URLs:
-
-1. **Video Generation**: When the whiteboard CLI completes rendering, the video file is stored locally in `/tmp`
-2. **Immediate Access**: A temporary URL (`/api/v1/preview/temp/:filename`) is returned immediately for instant preview access
-3. **Background Upload**: The video is queued for background upload to MinIO storage
-4. **Permanent URL**: Once uploaded to MinIO, the preview URL is automatically updated to the permanent storage URL
-
-This approach provides:
-- ⚡ **Faster preview availability** - No waiting for MinIO upload
-- 🔄 **Seamless transition** - Automatic switch to permanent URL
-- 💾 **Reliable storage** - Files eventually moved to MinIO for persistence
 
 ---
 

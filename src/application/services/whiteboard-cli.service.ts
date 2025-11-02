@@ -437,7 +437,6 @@ export class WhiteboardCliService {
 
   /**
    * Upload video to MinIO storage and return public URL
-   * @deprecated Use PreviewUploadService for background uploads instead
    */
   private async uploadVideoToStorage(videoPath: string): Promise<string> {
     try {
@@ -464,18 +463,6 @@ export class WhiteboardCliService {
       console.error(`[Whiteboard] Failed to upload video to storage: ${error}`)
       throw new Error(`Failed to upload video to storage: ${error}`)
     }
-  }
-
-  /**
-   * Generate a temporary URL for local preview file
-   * This allows immediate preview access while upload to MinIO happens in background
-   */
-  generateTemporaryUrl(videoPath: string): string {
-    // Extract filename from path
-    const filename = videoPath.split('/').pop() || videoPath
-    // Return URL that will be served by the temporary preview endpoint
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
-    return `${baseUrl}/api/v1/preview/temp/${filename}`
   }
 
   /**
@@ -622,15 +609,11 @@ export class WhiteboardCliService {
 
           if (code === 0 && outputPath) {
             try {
-              // Generate temporary URL immediately for fast preview access
-              const tempUrl = this.generateTemporaryUrl(outputPath)
-
-              // Return temporary URL immediately
-              // Note: The PreviewUploadService will handle background upload to MinIO
-              resolve(tempUrl)
-            } catch (error) {
-              console.error(`[Whiteboard] Failed to generate temporary URL: ${error}`)
-              reject(new Error(`Failed to generate temporary URL: ${error}`))
+              const minioUrl = await this.uploadVideoToStorage(outputPath)
+              resolve(minioUrl)
+            } catch (uploadError) {
+              console.error(`[Whiteboard] Upload to MinIO failed: ${uploadError}`)
+              reject(new Error(`Failed to upload video to storage: ${uploadError}`))
             }
           } else {
             const errorMsg = `Whiteboard CLI exited with code ${code}${errorOutput ? `: ${errorOutput.slice(0, 200)}` : ''}`
