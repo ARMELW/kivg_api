@@ -501,13 +501,22 @@ export class PreviewController implements Routes {
       try {
         const { filename } = c.req.param()
 
-        // Security: Only allow video files
-        if (!filename.endsWith('.mp4')) {
-          return c.json({ success: false, error: 'Invalid file type' }, 400)
+        // Security: Sanitize filename to prevent path traversal attacks
+        // Only allow alphanumeric characters, hyphens, underscores, and .mp4 extension
+        const sanitizedFilename = filename.replaceAll(/[^\w.-]/g, '')
+
+        // Security: Only allow video files with .mp4 extension
+        if (!sanitizedFilename.endsWith('.mp4') || sanitizedFilename !== filename) {
+          return c.json({ success: false, error: 'Invalid file type or filename' }, 400)
+        }
+
+        // Security: Ensure filename doesn't contain path separators
+        if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
+          return c.json({ success: false, error: 'Invalid filename' }, 400)
         }
 
         // Construct the file path (videos are in /tmp directory)
-        const filePath = `/tmp/${filename}`
+        const filePath = `/tmp/${sanitizedFilename}`
 
         // Check if file exists
         const file = Bun.file(filePath)
@@ -521,7 +530,7 @@ export class PreviewController implements Routes {
         return new Response(file, {
           headers: {
             'Content-Type': 'video/mp4',
-            'Content-Disposition': `inline; filename="${filename}"`,
+            'Content-Disposition': `inline; filename="${sanitizedFilename}"`,
             'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
           }
         })
