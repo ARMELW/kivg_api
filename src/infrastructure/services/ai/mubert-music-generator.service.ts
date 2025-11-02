@@ -69,7 +69,7 @@ export class MubertMusicGenerator implements AIMusicGenerator {
       const audioBuffer = Buffer.from(await audioResponse.arrayBuffer())
 
       // Step 3: Upload to our storage
-      const uploadResult = await uploadFile(audioBuffer, 'audio')
+      const uploadResult = await uploadFile(audioBuffer, 'audio', 'audio/mpeg')
 
       return {
         success: true,

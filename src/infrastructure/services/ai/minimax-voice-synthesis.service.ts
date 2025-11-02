@@ -56,7 +56,7 @@ export class MiniMaxVoiceSynthesis implements AIVoiceSynthesis {
       const audioBuffer = Buffer.from(await response.arrayBuffer())
 
       // Upload the audio file
-      const uploadResult = await uploadFile(audioBuffer, 'audio')
+      const uploadResult = await uploadFile(audioBuffer, 'audio', 'audio/mpeg')
 
       // Estimate duration (rough estimate: ~150 words per minute, ~5 chars per word)
       const estimatedDuration = Math.ceil(((text.length / 5 / 150) * 60) / speed)

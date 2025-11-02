@@ -76,7 +76,7 @@ export class AudioController implements Routes {
           }
 
           const buffer = Buffer.from(await file.arrayBuffer())
-          const uploadResult = await uploadFile(buffer, 'audio')
+          const uploadResult = await uploadFile(buffer, 'audio', file.type)
 
           const audio = await this.audioRepository.create({
             userId: user.id,

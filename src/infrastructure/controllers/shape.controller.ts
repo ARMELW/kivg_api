@@ -122,8 +122,8 @@ export class ShapeController implements Routes {
           const pathData = this.shapeProcessingService.extractPathData(shapeData.svgContent)
 
           // Upload original SVG and thumbnail
-          const uploadResult = await uploadFile(buffer, 'shapes')
-          const thumbnailResult = await uploadFile(thumbnailBuffer, 'shapes/thumbnails')
+          const uploadResult = await uploadFile(buffer, 'shapes', file.type)
+          const thumbnailResult = await uploadFile(thumbnailBuffer, 'shapes/thumbnails', 'image/webp')
 
           const shape = await this.shapeRepository.create({
             userId: user.id,

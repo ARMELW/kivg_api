@@ -63,7 +63,7 @@ export class ElevenLabsVoiceSynthesis implements AIVoiceSynthesis {
       const audioBuffer = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)))
 
       // Upload the audio file
-      const uploadResult = await uploadFile(audioBuffer, 'audio')
+      const uploadResult = await uploadFile(audioBuffer, 'audio', 'audio/mpeg')
 
       // Estimate duration (very rough estimate: ~150 words per minute, ~5 chars per word)
       const estimatedDuration = Math.ceil(((text.length / 5 / 150) * 60) / speed)
