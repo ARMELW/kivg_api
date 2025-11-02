@@ -466,6 +466,29 @@ export class WhiteboardCliService {
   }
 
   /**
+   * Upload video to MinIO storage in background (non-blocking)
+   * Returns immediately without waiting for upload to complete
+   */
+  async uploadVideoToStorageAsync(videoPath: string): Promise<void> {
+    // Upload asynchronously without blocking
+    this.uploadVideoToStorage(videoPath).catch((error) => {
+      console.error(`[Whiteboard] Background upload failed for ${videoPath}:`, error)
+    })
+  }
+
+  /**
+   * Generate a temporary URL for local preview file
+   * This allows immediate preview access while upload to MinIO happens in background
+   */
+  generateTemporaryUrl(videoPath: string): string {
+    // Extract filename from path
+    const filename = videoPath.split('/').pop() || videoPath
+    // Return URL that will be served by the temporary preview endpoint
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
+    return `${baseUrl}/api/v1/preview/temp/${filename}`
+  }
+
+  /**
    * Execute whiteboard-cli to generate video with timeout and proper error handling
    */
   async execute(
@@ -609,11 +632,17 @@ export class WhiteboardCliService {
 
           if (code === 0 && outputPath) {
             try {
-              const minioUrl = await this.uploadVideoToStorage(outputPath)
-              resolve(minioUrl)
-            } catch (uploadError) {
-              console.error(`[Whiteboard] Upload to MinIO failed: ${uploadError}`)
-              reject(new Error(`Failed to upload video to storage: ${uploadError}`))
+              // Generate temporary URL immediately for fast preview access
+              const tempUrl = this.generateTemporaryUrl(outputPath)
+              
+              // Start background upload to MinIO (non-blocking)
+              this.uploadVideoToStorageAsync(outputPath)
+              
+              // Return temporary URL immediately
+              resolve(tempUrl)
+            } catch (error) {
+              console.error(`[Whiteboard] Failed to generate temporary URL: ${error}`)
+              reject(new Error(`Failed to generate temporary URL: ${error}`))
             }
           } else {
             const errorMsg = `Whiteboard CLI exited with code ${code}${errorOutput ? `: ${errorOutput.slice(0, 200)}` : ''}`
