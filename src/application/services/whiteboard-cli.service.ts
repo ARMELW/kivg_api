@@ -156,7 +156,7 @@ export class WhiteboardCliService {
 
       slides = scene.sceneCameras.map((camera: any, index: number) => ({
         index,
-       // duration: camera.duration || scene.slideDuration || 3,
+        // duration: camera.duration || scene.slideDuration || 3,
         skip_rate: camera.pauseDuration ? Math.ceil(camera.pauseDuration) : 10,
         layers: scene.layers.map((layer: any) =>
           this.mapLayerToConfig({ ...layer }, defaultCamera, camera, this.canvasWidth, this.canvasHeight)
@@ -281,15 +281,18 @@ export class WhiteboardCliService {
       case 'shape':
         return {
           ...baseConfig,
+          svg_path: layer.svg_path || '',
+          svg_sampling_rate: layer.svg_sampling_rate || 12,
+          svg_reverse: layer.svg_reverse || false,
           shape_config: {
-            shape: layer.shapeName || 'rectangle',
-            color: layer.shapeColor || '#000000',
-            fill_color: layer.shapeFillColor || '#cccccc',
-            stroke_width: layer.strokeWidth || 2,
-            position: finalPosition,
+            //shape: layer.shapeName || 'rectangle',
+            color: layer.shape_config.color || '#000000',
+            fill_color: layer.shape_config.fill_color || '#cccccc',
+            stroke_width: layer.shape_config.stroke_width || 2,
             width: finalDimensions.width || 100,
             height: finalDimensions.height || 100
-          }
+          },
+          position: finalPosition
         }
 
       case 'image':
