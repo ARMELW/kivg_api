@@ -1,5 +1,4 @@
 import { Buffer } from 'node:buffer'
-import { randomUUID } from 'node:crypto'
 import process from 'node:process'
 import { Client } from 'minio'
 import type {
@@ -85,9 +84,8 @@ export class MinIOStorageProvider implements FileStorageProvider {
   async uploadFile(params: UploadParams): Promise<UploadResult> {
     try {
       const { buffer, filename, bucket, contentType, metadata } = params
-      const id = randomUUID()
-      const extension = filename.split('.').pop() || 'bin'
-      const objectName = `${id}.${extension}`
+      // Use the provided filename which includes the folder structure
+      const objectName = filename
 
       await this.client.putObject(bucket, objectName, buffer, buffer.length, {
         'Content-Type': contentType,
@@ -95,6 +93,11 @@ export class MinIOStorageProvider implements FileStorageProvider {
       })
 
       const url = await this.getFileUrl(bucket, objectName)
+
+      // Extract the ID from the filename (format: folder/id.extension)
+      const filenameParts = filename.split('/')
+      const lastPart = filenameParts.at(-1) || filename
+      const id = lastPart.split('.')[0]
 
       return {
         id,
@@ -115,9 +118,8 @@ export class MinIOStorageProvider implements FileStorageProvider {
   async uploadStream(params: StreamUploadParams): Promise<UploadResult> {
     try {
       const { stream, filename, bucket, size, contentType, metadata } = params
-      const id = randomUUID()
-      const extension = filename.split('.').pop() || 'bin'
-      const objectName = `${id}.${extension}`
+      // Use the provided filename which includes the folder structure
+      const objectName = filename
 
       await this.client.putObject(bucket, objectName, stream, size, {
         'Content-Type': contentType,
@@ -125,6 +127,11 @@ export class MinIOStorageProvider implements FileStorageProvider {
       })
 
       const url = await this.getFileUrl(bucket, objectName)
+
+      // Extract the ID from the filename (format: folder/id.extension)
+      const filenameParts = filename.split('/')
+      const lastPart = filenameParts.at(-1) || filename
+      const id = lastPart.split('.')[0]
 
       return {
         id,
