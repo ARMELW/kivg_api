@@ -97,7 +97,8 @@ export class MinIOStorageProvider implements FileStorageProvider {
       // Extract the ID from the filename (format: folder/id.extension)
       const filenameParts = filename.split('/')
       const lastPart = filenameParts.at(-1) || filename
-      const id = lastPart.split('.')[0]
+      const dotIndex = lastPart.lastIndexOf('.')
+      const id = dotIndex > 0 ? lastPart.slice(0, dotIndex) : lastPart
 
       return {
         id,
@@ -131,7 +132,8 @@ export class MinIOStorageProvider implements FileStorageProvider {
       // Extract the ID from the filename (format: folder/id.extension)
       const filenameParts = filename.split('/')
       const lastPart = filenameParts.at(-1) || filename
-      const id = lastPart.split('.')[0]
+      const dotIndex = lastPart.lastIndexOf('.')
+      const id = dotIndex > 0 ? lastPart.slice(0, dotIndex) : lastPart
 
       return {
         id,
