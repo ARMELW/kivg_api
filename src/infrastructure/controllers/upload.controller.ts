@@ -83,6 +83,7 @@ export class UploadController {
           }
 
           let buffer = Buffer.from(await file.arrayBuffer()) as Buffer
+          const originalMimeType = file.type
 
           // Process image if it's an image file
           if (file.type.startsWith('image/')) {
@@ -97,7 +98,7 @@ export class UploadController {
             }
           }
 
-          const result = await uploadFile(buffer, folder)
+          const result = await uploadFile(buffer, folder, originalMimeType)
 
           return c.json({
             success: true,

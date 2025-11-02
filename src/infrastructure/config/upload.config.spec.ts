@@ -43,7 +43,33 @@ describe('upload.config', () => {
   })
 
   describe('uploadFile', () => {
-    it('should upload an image file to the assets bucket', async () => {
+    it('should upload an image file to the assets bucket with correct PNG extension', async () => {
+      // Create a PNG buffer (magic number: 89 50 4E 47)
+      const buffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/assets/assets/test-id.png',
+        bucket: 'assets',
+        size: buffer.length,
+        publicId: 'assets/assets/test-id.png'
+      })
+
+      const result = await uploadFile(buffer, 'assets', 'image/png')
+
+      expect(mockStorageProvider.uploadFile).toHaveBeenCalledTimes(1)
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.bucket).toBe(STORAGE_BUCKETS.ASSETS)
+      expect(call.filename).toMatch(/^assets\/.*\.png$/)
+      expect(call.buffer).toBe(buffer)
+      expect(call.contentType).toBe('image/png')
+
+      expect(result.resource_type).toBe('image')
+      expect(result.url).toMatch(/assets/)
+      expect(result.public_id).toMatch(/^assets\/assets\/.*\.png$/)
+    })
+
+    it('should upload an image file with webp extension when processed', async () => {
       // Create a PNG buffer (magic number: 89 50 4E 47)
       const buffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
@@ -55,7 +81,7 @@ describe('upload.config', () => {
         publicId: 'assets/assets/test-id.webp'
       })
 
-      const result = await uploadFile(buffer, 'assets')
+      const result = await uploadFile(buffer, 'assets', 'image/webp')
 
       expect(mockStorageProvider.uploadFile).toHaveBeenCalledTimes(1)
       const call = mockStorageProvider.uploadFile.mock.calls[0][0]
@@ -69,7 +95,7 @@ describe('upload.config', () => {
       expect(result.public_id).toMatch(/^assets\/assets\/.*\.webp$/)
     })
 
-    it('should upload an audio file to the audio bucket', async () => {
+    it('should upload an audio file to the audio bucket with correct extension', async () => {
       // Create an MP3 buffer (magic number: ID3)
       const buffer = Buffer.from([0x49, 0x44, 0x33, 0x04, 0x00, 0x00])
 
@@ -81,7 +107,7 @@ describe('upload.config', () => {
         publicId: 'audio/audio/test-id.mp3'
       })
 
-      const result = await uploadFile(buffer, 'audio')
+      const result = await uploadFile(buffer, 'audio', 'audio/mpeg')
 
       expect(mockStorageProvider.uploadFile).toHaveBeenCalledTimes(1)
       const call = mockStorageProvider.uploadFile.mock.calls[0][0]
@@ -90,6 +116,25 @@ describe('upload.config', () => {
       expect(call.contentType).toBe('audio/mpeg')
 
       expect(result.resource_type).toBe('audio')
+    })
+
+    it('should upload SVG files with correct extension', async () => {
+      const buffer = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/assets/shapes/test-id.svg',
+        bucket: 'assets',
+        size: buffer.length,
+        publicId: 'assets/shapes/test-id.svg'
+      })
+
+      const result = await uploadFile(buffer, 'shapes', 'image/svg+xml')
+
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.filename).toMatch(/^shapes\/.*\.svg$/)
+      expect(call.contentType).toBe('image/svg+xml')
+      expect(result.resource_type).toBe('image')
     })
 
     it('should upload to general bucket for unknown folder types', async () => {
@@ -121,7 +166,7 @@ describe('upload.config', () => {
         publicId: 'thumbnails/assets/thumbnails/test-id.webp'
       })
 
-      await uploadFile(buffer, 'assets/thumbnails')
+      await uploadFile(buffer, 'assets/thumbnails', 'image/webp')
 
       const call = mockStorageProvider.uploadFile.mock.calls[0][0]
       expect(call.bucket).toBe(STORAGE_BUCKETS.THUMBNAILS)
@@ -211,7 +256,24 @@ describe('upload.config', () => {
   })
 
   describe('resource type detection', () => {
-    it('should detect JPEG images', async () => {
+    it('should detect JPEG images from MIME type', async () => {
+      const buffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0])
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/general/test/test-id.jpg',
+        bucket: 'general',
+        size: buffer.length,
+        publicId: 'general/test/test-id.jpg'
+      })
+
+      const result = await uploadFile(buffer, 'test', 'image/jpeg')
+      expect(result.resource_type).toBe('image')
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.filename).toMatch(/\.jpg$/)
+      expect(call.contentType).toBe('image/jpeg')
+    })
+
+    it('should detect JPEG images from magic numbers when no MIME type', async () => {
       const buffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0])
       mockStorageProvider.uploadFile.mockResolvedValue({
         id: 'test-id',
@@ -223,20 +285,24 @@ describe('upload.config', () => {
 
       const result = await uploadFile(buffer, 'test')
       expect(result.resource_type).toBe('image')
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.filename).toMatch(/\.webp$/)
     })
 
-    it('should detect GIF images', async () => {
+    it('should detect GIF images from MIME type', async () => {
       const buffer = Buffer.from([0x47, 0x49, 0x46, 0x38])
       mockStorageProvider.uploadFile.mockResolvedValue({
         id: 'test-id',
-        url: 'http://localhost:9000/general/test/test-id.webp',
+        url: 'http://localhost:9000/general/test/test-id.gif',
         bucket: 'general',
         size: buffer.length,
-        publicId: 'general/test/test-id.webp'
+        publicId: 'general/test/test-id.gif'
       })
 
-      const result = await uploadFile(buffer, 'test')
+      const result = await uploadFile(buffer, 'test', 'image/gif')
       expect(result.resource_type).toBe('image')
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.filename).toMatch(/\.gif$/)
     })
 
     it('should detect RIFF audio files', async () => {
@@ -251,6 +317,23 @@ describe('upload.config', () => {
 
       const result = await uploadFile(buffer, 'test')
       expect(result.resource_type).toBe('audio')
+    })
+
+    it('should handle WAV audio files with MIME type', async () => {
+      const buffer = Buffer.from([0x52, 0x49, 0x46, 0x46])
+      mockStorageProvider.uploadFile.mockResolvedValue({
+        id: 'test-id',
+        url: 'http://localhost:9000/general/test/test-id.wav',
+        bucket: 'general',
+        size: buffer.length,
+        publicId: 'general/test/test-id.wav'
+      })
+
+      const result = await uploadFile(buffer, 'test', 'audio/wav')
+      expect(result.resource_type).toBe('audio')
+      const call = mockStorageProvider.uploadFile.mock.calls[0][0]
+      expect(call.filename).toMatch(/\.wav$/)
+      expect(call.contentType).toBe('audio/wav')
     })
 
     it('should default to raw for unknown types', async () => {

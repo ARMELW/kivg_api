@@ -124,8 +124,8 @@ export class AssetController implements Routes {
           const metadata = await this.imageProcessingService.getMetadata(buffer)
 
           // Upload processed image and thumbnail
-          const uploadResult = await uploadFile(processedBuffer, 'assets')
-          const thumbnailResult = await uploadFile(thumbnailBuffer, 'assets/thumbnails')
+          const uploadResult = await uploadFile(processedBuffer, 'assets', file.type)
+          const thumbnailResult = await uploadFile(thumbnailBuffer, 'assets/thumbnails', 'image/webp')
 
           const asset = await this.assetRepository.create({
             userId: user.id,
