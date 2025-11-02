@@ -500,7 +500,7 @@ export class PreviewController implements Routes {
     this.controller.get('/v1/preview/temp/:filename', async (c: any) => {
       try {
         const { filename } = c.req.param()
-        
+
         // Security: Only allow video files
         if (!filename.endsWith('.mp4')) {
           return c.json({ success: false, error: 'Invalid file type' }, 400)
@@ -508,11 +508,11 @@ export class PreviewController implements Routes {
 
         // Construct the file path (videos are in /tmp directory)
         const filePath = `/tmp/${filename}`
-        
+
         // Check if file exists
         const file = Bun.file(filePath)
         const exists = await file.exists()
-        
+
         if (!exists) {
           return c.json({ success: false, error: 'Preview file not found' }, 404)
         }

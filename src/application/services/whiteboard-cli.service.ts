@@ -437,6 +437,7 @@ export class WhiteboardCliService {
 
   /**
    * Upload video to MinIO storage and return public URL
+   * @deprecated Use PreviewUploadService for background uploads instead
    */
   private async uploadVideoToStorage(videoPath: string): Promise<string> {
     try {
@@ -463,17 +464,6 @@ export class WhiteboardCliService {
       console.error(`[Whiteboard] Failed to upload video to storage: ${error}`)
       throw new Error(`Failed to upload video to storage: ${error}`)
     }
-  }
-
-  /**
-   * Upload video to MinIO storage in background (non-blocking)
-   * Returns immediately without waiting for upload to complete
-   */
-  async uploadVideoToStorageAsync(videoPath: string): Promise<void> {
-    // Upload asynchronously without blocking
-    this.uploadVideoToStorage(videoPath).catch((error) => {
-      console.error(`[Whiteboard] Background upload failed for ${videoPath}:`, error)
-    })
   }
 
   /**
@@ -634,11 +624,9 @@ export class WhiteboardCliService {
             try {
               // Generate temporary URL immediately for fast preview access
               const tempUrl = this.generateTemporaryUrl(outputPath)
-              
-              // Start background upload to MinIO (non-blocking)
-              this.uploadVideoToStorageAsync(outputPath)
-              
+
               // Return temporary URL immediately
+              // Note: The PreviewUploadService will handle background upload to MinIO
               resolve(tempUrl)
             } catch (error) {
               console.error(`[Whiteboard] Failed to generate temporary URL: ${error}`)

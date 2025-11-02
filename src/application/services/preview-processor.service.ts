@@ -1,9 +1,9 @@
 import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
 import type { SceneRepositoryInterface } from '@/domain/repositories/scene.repository.interface'
+import { PreviewUploadService } from './preview-upload.service'
 import type { CacheService } from './cache.service'
 import type { PreviewQueueService } from './preview-queue.service'
 import type { WhiteboardCliService } from './whiteboard-cli.service'
-import { PreviewUploadService } from './preview-upload.service'
 
 // Top-level job type (must not be declared inside the class)
 type PreviewJob = {

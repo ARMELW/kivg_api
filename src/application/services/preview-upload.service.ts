@@ -1,5 +1,5 @@
-import { readFile, unlink } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
+import { readFile, unlink } from 'node:fs/promises'
 import type { PreviewRepositoryInterface } from '@/domain/repositories/preview.repository.interface'
 import { StorageService } from './storage.service'
 
@@ -61,12 +61,18 @@ export class PreviewUploadService {
    */
   queueUpload(previewId: string, localPath: string): void {
     // Extract the actual file path from the URL if it's a temporary URL
-    const filePath = localPath.includes('/tmp/') 
-      ? localPath.split('/tmp/').pop() 
-      : localPath
+    // Format: http://localhost:3000/api/v1/preview/temp/filename.mp4
+    let fullPath = localPath
 
-    const fullPath = filePath?.startsWith('/') ? filePath : `/tmp/${filePath}`
-    
+    if (localPath.includes('/api/v1/preview/temp/')) {
+      // Extract filename from temporary URL
+      const filename = localPath.split('/api/v1/preview/temp/').pop()
+      fullPath = `/tmp/${filename}`
+    } else if (!localPath.startsWith('/')) {
+      // If it's just a filename, prepend /tmp/
+      fullPath = `/tmp/${localPath}`
+    }
+
     this.uploadQueue.set(previewId, fullPath)
     console.info(`[PREVIEW UPLOAD] 📥 Queued upload for preview ${previewId}: ${fullPath}`)
   }
