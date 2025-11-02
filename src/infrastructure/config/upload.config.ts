@@ -67,7 +67,7 @@ function getExtensionFromMimeType(mimeType: string): string | null {
     'text/xml': 'xml',
     'application/xml': 'xml'
   }
-  
+
   return mimeToExtension[mimeType.toLowerCase()] || null
 }
 
@@ -82,7 +82,7 @@ function getResourceType(buffer: Buffer, mimeType?: string): string {
     if (mimeTypeLower.startsWith('audio/')) return 'audio'
     if (mimeTypeLower.startsWith('video/')) return 'video'
   }
-  
+
   // Fallback to magic numbers for common file types
   if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
     return 'image'
@@ -106,11 +106,7 @@ function getResourceType(buffer: Buffer, mimeType?: string): string {
  * Upload a file to storage
  * Maintains compatibility with the original Cloudinary uploadFile signature
  */
-export const uploadFile = async (
-  file: Buffer, 
-  folder: string, 
-  originalMimeType?: string
-): Promise<UploadResponse> => {
+export const uploadFile = async (file: Buffer, folder: string, originalMimeType?: string): Promise<UploadResponse> => {
   try {
     // Ensure storage is initialized before uploading
     await ensureStorageInitialized()
@@ -123,31 +119,29 @@ export const uploadFile = async (
     // Determine file extension - prioritize MIME type, then resource type, then default
     let extension = 'bin'
     let contentType = 'application/octet-stream'
-    
+
     if (originalMimeType) {
       const mimeExtension = getExtensionFromMimeType(originalMimeType)
       if (mimeExtension) {
         extension = mimeExtension
         contentType = originalMimeType
-      } else {
-        // Fallback to resource type detection
-        if (resourceType === 'image') {
-          extension = 'webp'
-          contentType = 'image/webp'
-        } else if (resourceType === 'audio') {
-          extension = 'mp3'
-          contentType = 'audio/mpeg'
-        }
-      }
-    } else {
-      // No MIME type provided, use resource type
-      if (resourceType === 'image') {
+      } else if (resourceType === 'image') {
+        // Fallback to resource type detection for images
         extension = 'webp'
         contentType = 'image/webp'
       } else if (resourceType === 'audio') {
+        // Fallback to resource type detection for audio
         extension = 'mp3'
         contentType = 'audio/mpeg'
       }
+    } else if (resourceType === 'image') {
+      // No MIME type provided, use resource type for images
+      extension = 'webp'
+      contentType = 'image/webp'
+    } else if (resourceType === 'audio') {
+      // No MIME type provided, use resource type for audio
+      extension = 'mp3'
+      contentType = 'audio/mpeg'
     }
 
     const filename = folder ? `${folder}/${id}.${extension}` : `${id}.${extension}`
