@@ -33,6 +33,16 @@ export type EntranceAnimationType =
   // Zoom animations
   | 'zoom_in'
   | 'distance'
+  | 'bounce_in'
+  | 'scale_pulse'
+  | 'elastic_in'
+  // Rotation and flips
+  | 'rotate_in'
+  | 'spin_in'
+  | 'flip_in_x'
+  | 'flip_in_horizontal'
+  | 'flip_in_y'
+  | 'flip_in_vertical'
   // Reveal animations
   | 'reveal'
   | 'wipeleft'
@@ -44,11 +54,16 @@ export type EntranceAnimationType =
   | 'circlecrop'
   | 'circleclose'
   | 'rectcrop'
+  // Visual effects
+  | 'blur_in'
+  | 'focus_in'
   // Hand push animations
   | 'push_from_left'
   | 'push_from_right'
   | 'push_from_top'
   | 'push_from_bottom'
+  // Special effects
+  | 'back_in'
 
 // Transition types as per integration guide
 export type TransitionType =
@@ -58,6 +73,7 @@ export type TransitionType =
   | 'fade_to_white'
   | 'fadeblack'
   | 'fadewhite'
+  | 'crossfade_blur'
   // Push transitions
   | 'push_left'
   | 'push_right'
@@ -75,6 +91,7 @@ export type TransitionType =
   | 'wiperight'
   | 'wipeup'
   | 'wipedown'
+  | 'diagonal_wipe'
   // Special transitions
   | 'iris'
   | 'zoom_out_in'
@@ -84,6 +101,18 @@ export type TransitionType =
   | 'scene_slide'
   | 'pan'
   | 'camera_move'
+  | 'dissolve'
+  | 'morph'
+  // Shape transitions
+  | 'box_in'
+  | 'box_out'
+  | 'clock_wipe'
+  | 'radial_wipe'
+  // Rotation transitions
+  | 'rotate_transition'
+  | 'spin_transition'
+  // No transition
+  | 'none'
 
 // Layer modes as per integration guide
 export type LayerMode =

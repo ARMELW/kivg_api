@@ -152,7 +152,7 @@ describe('AnimationValidationService', () => {
                 z_index: 1,
                 entrance_animation: {
                   type: 'fade_in',
-                  duration: 0.05 // Too short
+                  duration: -1 // Negative
                 }
               }
             ]
@@ -161,7 +161,338 @@ describe('AnimationValidationService', () => {
       }
 
       const errors = service.validate(config)
-      expect(errors.some((e) => e.includes('entrance animation duration must be at least 0.1 seconds'))).toBe(true)
+      expect(errors.some((e) => e.includes('entrance animation duration must be non-negative'))).toBe(true)
+    })
+
+    it('should validate new entrance animations', () => {
+      const animationTypes = [
+        'bounce_in',
+        'rotate_in',
+        'spin_in',
+        'flip_in_x',
+        'flip_in_horizontal',
+        'flip_in_y',
+        'flip_in_vertical',
+        'blur_in',
+        'focus_in',
+        'back_in',
+        'elastic_in',
+        'scale_pulse'
+      ]
+
+      animationTypes.forEach((type) => {
+        const config: AnimationConfig = {
+          scene_width: 1920,
+          scene_height: 1080,
+          background: '#FFFFFF',
+          frame_rate: 30,
+          slides: [
+            {
+              index: 0,
+              duration: 4,
+              layers: [
+                {
+                  type: 'text',
+                  text_config: {
+                    text: 'Test',
+                    font: 'Arial',
+                    size: 60,
+                    color: [0, 0, 0]
+                  },
+                  position: { x: 960, y: 540 },
+                  z_index: 1,
+                  entrance_animation: {
+                    type: type as any,
+                    duration: 1
+                  }
+                }
+              ]
+            }
+          ]
+        }
+
+        const errors = service.validate(config)
+        expect(errors).toHaveLength(0)
+      })
+    })
+
+    it('should validate exit animations', () => {
+      const config: AnimationConfig = {
+        scene_width: 1920,
+        scene_height: 1080,
+        background: '#FFFFFF',
+        frame_rate: 30,
+        slides: [
+          {
+            index: 0,
+            duration: 4,
+            layers: [
+              {
+                type: 'text',
+                text_config: {
+                  text: 'Hello World',
+                  font: 'Arial',
+                  size: 60,
+                  color: [0, 0, 0]
+                },
+                position: { x: 960, y: 540 },
+                z_index: 1,
+                entrance_animation: {
+                  type: 'fade_in',
+                  duration: 1
+                },
+                exit_animation: {
+                  type: 'fade_out',
+                  duration: 0.8
+                }
+              }
+            ]
+          }
+        ]
+      }
+
+      const errors = service.validate(config)
+      expect(errors).toHaveLength(0)
+    })
+
+    it('should validate all exit animation types', () => {
+      const exitTypes = [
+        'fade_out',
+        'slide_out_left',
+        'slide_out_right',
+        'slide_out_top',
+        'slide_out_bottom',
+        'zoom_out',
+        'bounce_out',
+        'rotate_out',
+        'spin_out',
+        'flip_out_x',
+        'flip_out_horizontal',
+        'flip_out_y',
+        'flip_out_vertical',
+        'scale_out',
+        'blur_out',
+        'focus_out',
+        'elastic_out'
+      ]
+
+      exitTypes.forEach((type) => {
+        const config: AnimationConfig = {
+          scene_width: 1920,
+          scene_height: 1080,
+          background: '#FFFFFF',
+          frame_rate: 30,
+          slides: [
+            {
+              index: 0,
+              duration: 4,
+              layers: [
+                {
+                  type: 'text',
+                  text_config: {
+                    text: 'Test',
+                    font: 'Arial',
+                    size: 60,
+                    color: [0, 0, 0]
+                  },
+                  position: { x: 960, y: 540 },
+                  z_index: 1,
+                  exit_animation: {
+                    type: type as any,
+                    duration: 0.8
+                  }
+                }
+              ]
+            }
+          ]
+        }
+
+        const errors = service.validate(config)
+        expect(errors).toHaveLength(0)
+      })
+    })
+
+    it('should validate easing functions on entrance animations', () => {
+      const easingFunctions = [
+        'linear',
+        'ease_in',
+        'ease_out',
+        'ease_in_out',
+        'ease_in_cubic',
+        'ease_out_cubic',
+        'bounce_in',
+        'bounce_out',
+        'bounce_in_out',
+        'elastic_in',
+        'elastic_out',
+        'elastic_in_out',
+        'back_in',
+        'back_out',
+        'back_in_out'
+      ]
+
+      easingFunctions.forEach((easing) => {
+        const config: AnimationConfig = {
+          scene_width: 1920,
+          scene_height: 1080,
+          background: '#FFFFFF',
+          frame_rate: 30,
+          slides: [
+            {
+              index: 0,
+              duration: 4,
+              layers: [
+                {
+                  type: 'text',
+                  text_config: {
+                    text: 'Test',
+                    font: 'Arial',
+                    size: 60,
+                    color: [0, 0, 0]
+                  },
+                  position: { x: 960, y: 540 },
+                  z_index: 1,
+                  entrance_animation: {
+                    type: 'slide_in_left',
+                    duration: 1,
+                    easing: easing as any
+                  }
+                }
+              ]
+            }
+          ]
+        }
+
+        const errors = service.validate(config)
+        expect(errors).toHaveLength(0)
+      })
+    })
+
+    it('should validate new transition types', () => {
+      const newTransitions = [
+        'crossfade_blur',
+        'diagonal_wipe',
+        'dissolve',
+        'morph',
+        'box_in',
+        'box_out',
+        'clock_wipe',
+        'radial_wipe',
+        'rotate_transition',
+        'spin_transition',
+        'none'
+      ]
+
+      newTransitions.forEach((type) => {
+        const config: AnimationConfig = {
+          scene_width: 1920,
+          scene_height: 1080,
+          background: '#FFFFFF',
+          frame_rate: 30,
+          slides: [
+            {
+              index: 0,
+              duration: 4,
+              layers: [
+                {
+                  type: 'text',
+                  text_config: {
+                    text: 'Slide 1',
+                    font: 'Arial',
+                    size: 60,
+                    color: [0, 0, 0]
+                  },
+                  position: { x: 960, y: 540 },
+                  z_index: 1
+                }
+              ]
+            },
+            {
+              index: 1,
+              duration: 4,
+              layers: [
+                {
+                  type: 'text',
+                  text_config: {
+                    text: 'Slide 2',
+                    font: 'Arial',
+                    size: 60,
+                    color: [0, 0, 0]
+                  },
+                  position: { x: 960, y: 540 },
+                  z_index: 1
+                }
+              ]
+            }
+          ],
+          transitions: [
+            {
+              after_slide: 0,
+              type: type as any,
+              duration: 0.5
+            }
+          ]
+        }
+
+        const errors = service.validate(config)
+        expect(errors).toHaveLength(0)
+      })
+    })
+
+    it('should validate easing on transitions', () => {
+      const config: AnimationConfig = {
+        scene_width: 1920,
+        scene_height: 1080,
+        background: '#FFFFFF',
+        frame_rate: 30,
+        slides: [
+          {
+            index: 0,
+            duration: 4,
+            layers: [
+              {
+                type: 'text',
+                text_config: {
+                  text: 'Slide 1',
+                  font: 'Arial',
+                  size: 60,
+                  color: [0, 0, 0]
+                },
+                position: { x: 960, y: 540 },
+                z_index: 1
+              }
+            ]
+          },
+          {
+            index: 1,
+            duration: 4,
+            layers: [
+              {
+                type: 'text',
+                text_config: {
+                  text: 'Slide 2',
+                  font: 'Arial',
+                  size: 60,
+                  color: [0, 0, 0]
+                },
+                position: { x: 960, y: 540 },
+                z_index: 1
+              }
+            ]
+          }
+        ],
+        transitions: [
+          {
+            after_slide: 0,
+            type: 'fade',
+            duration: 0.5,
+            easing: 'ease_in_out'
+          }
+        ]
+      }
+
+      const errors = service.validate(config)
+      expect(errors).toHaveLength(0)
     })
 
     it('should reject invalid transition after_slide index', () => {
