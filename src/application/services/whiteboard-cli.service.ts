@@ -8,20 +8,106 @@ import { StorageService } from './storage.service'
 
 const WHITEBOARD_TIMEOUT_MS = 10 * 60 * 1000
 
+// Entrance animation types as per integration guide
+export type EntranceAnimationType =
+  // Basic animations
+  | 'fade_in'
+  | 'fadewhite'
+  | 'fadeblack'
+  | 'pop'
+  | 'appear'
+  // Slide animations
+  | 'slide_in_left'
+  | 'slide_in_right'
+  | 'slide_in_top'
+  | 'slide_in_bottom'
+  | 'slideleft'
+  | 'slideright'
+  | 'slideup'
+  | 'slidedown'
+  // Smooth animations
+  | 'smoothleft'
+  | 'smoothright'
+  | 'smoothup'
+  | 'smoothdown'
+  // Zoom animations
+  | 'zoom_in'
+  | 'distance'
+  // Reveal animations
+  | 'reveal'
+  | 'wipeleft'
+  | 'wiperight'
+  | 'wipeup'
+  | 'wipedown'
+  // Circular animations
+  | 'circleopen'
+  | 'circlecrop'
+  | 'circleclose'
+  | 'rectcrop'
+  // Hand push animations
+  | 'push_from_left'
+  | 'push_from_right'
+  | 'push_from_top'
+  | 'push_from_bottom'
+
+// Transition types as per integration guide
+export type TransitionType =
+  // Fade transitions
+  | 'fade'
+  | 'fade_to_black'
+  | 'fade_to_white'
+  | 'fadeblack'
+  | 'fadewhite'
+  // Push transitions
+  | 'push_left'
+  | 'push_right'
+  | 'push_up'
+  | 'push_down'
+  | 'push_top'
+  | 'push_bottom'
+  // Wipe transitions
+  | 'wipe'
+  | 'wipe_left'
+  | 'wipe_right'
+  | 'wipe_up'
+  | 'wipe_down'
+  | 'wipeleft'
+  | 'wiperight'
+  | 'wipeup'
+  | 'wipedown'
+  // Special transitions
+  | 'iris'
+  | 'zoom_out_in'
+  | 'zoom'
+  | 'reveal'
+  | 'slide'
+  | 'scene_slide'
+  | 'pan'
+  | 'camera_move'
+
+// Layer modes as per integration guide
+export type LayerMode = 'draw' | 'erase' | 'flood_fill' | 'coloriage' | 'path_follow' | 'path_follow_then_color' | 'static'
+
 export interface WhiteboardConfig {
+  scene_width?: number
+  scene_height?: number
+  background?: string
+  frame_rate?: number
   slides: Array<{
     index: number
     duration: number
     skip_rate?: number
     layers?: Array<{
-      type: 'image' | 'text' | 'arrow' | 'shape' | 'video'
+      type: 'image' | 'text' | 'arrow' | 'shape' | 'video' | 'svg'
       image_path?: string
+      svg_path?: string
       text_config?: {
         text: string
         font?: string
         size?: number
-        color?: string
+        color?: string | number[]
         align?: string
+        style?: string
         position?: { x: number; y: number }
       }
       arrow_config?: {
@@ -35,21 +121,22 @@ export interface WhiteboardConfig {
       }
       shape_config?: {
         shape: 'rectangle' | 'circle' | 'triangle' | 'polygon'
-        color?: string
-        fill_color?: string
+        color?: string | number[]
+        fill_color?: string | number[]
         stroke_width?: number
         position?: { x: number; y: number }
         width?: number
         height?: number
+        radius?: number
       }
       position?: { x: number; y: number }
       z_index: number
       skip_rate?: number
       scale?: number
       opacity?: number
-      mode?: 'draw' | 'static' | 'animated' | 'eraser'
+      mode?: LayerMode
       entrance_animation?: {
-        type: string
+        type: EntranceAnimationType
         duration: number
       }
       exit_animation?: {
@@ -64,7 +151,7 @@ export interface WhiteboardConfig {
   }>
   transitions?: Array<{
     after_slide: number
-    type: string
+    type: TransitionType
     duration: number
     pause_before?: number
   }>
