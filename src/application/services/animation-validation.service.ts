@@ -27,8 +27,8 @@ export class AnimationValidationService {
             `Transition ${index}: after_slide index ${transition.after_slide} is out of bounds (max: ${config.slides.length - 1})`
           )
         }
-        if (transition.duration < 0.1) {
-          errors.push(`Transition ${index}: duration must be at least 0.1 seconds`)
+        if (transition.duration < 0) {
+          errors.push(`Transition ${index}: duration must be non-negative`)
         }
         if (transition.duration > 3) {
           errors.push(`Transition ${index}: duration cannot exceed 3 seconds`)
@@ -116,13 +116,21 @@ export class AnimationValidationService {
 
     // Validate entrance animation if present
     if (layer.entrance_animation) {
-      if (layer.entrance_animation.duration < 0.1) {
-        errors.push(
-          `Slide ${slideIndex}, Layer ${layerIndex}: entrance animation duration must be at least 0.1 seconds`
-        )
+      if (layer.entrance_animation.duration < 0) {
+        errors.push(`Slide ${slideIndex}, Layer ${layerIndex}: entrance animation duration must be non-negative`)
       }
       if (layer.entrance_animation.duration > 5) {
         errors.push(`Slide ${slideIndex}, Layer ${layerIndex}: entrance animation duration cannot exceed 5 seconds`)
+      }
+    }
+
+    // Validate exit animation if present
+    if (layer.exit_animation) {
+      if (layer.exit_animation.duration < 0) {
+        errors.push(`Slide ${slideIndex}, Layer ${layerIndex}: exit animation duration must be non-negative`)
+      }
+      if (layer.exit_animation.duration > 5) {
+        errors.push(`Slide ${slideIndex}, Layer ${layerIndex}: exit animation duration cannot exceed 5 seconds`)
       }
     }
 

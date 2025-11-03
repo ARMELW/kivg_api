@@ -25,6 +25,16 @@ export const EntranceAnimationTypeSchema = z.enum([
   // Zoom animations
   'zoom_in',
   'distance',
+  'bounce_in',
+  'scale_pulse',
+  'elastic_in',
+  // Rotation and flips
+  'rotate_in',
+  'spin_in',
+  'flip_in_x',
+  'flip_in_horizontal',
+  'flip_in_y',
+  'flip_in_vertical',
   // Reveal animations
   'reveal',
   'wipeleft',
@@ -36,16 +46,68 @@ export const EntranceAnimationTypeSchema = z.enum([
   'circlecrop',
   'circleclose',
   'rectcrop',
+  // Visual effects
+  'blur_in',
+  'focus_in',
   // Hand push animations
   'push_from_left',
   'push_from_right',
   'push_from_top',
-  'push_from_bottom'
+  'push_from_bottom',
+  // Special effects
+  'back_in'
+])
+
+// Easing Function Types
+export const EasingFunctionSchema = z.enum([
+  'linear',
+  'ease_in',
+  'ease_out',
+  'ease_in_out',
+  'ease_in_cubic',
+  'ease_out_cubic',
+  'bounce_in',
+  'bounce_out',
+  'bounce_in_out',
+  'elastic_in',
+  'elastic_out',
+  'elastic_in_out',
+  'back_in',
+  'back_out',
+  'back_in_out'
 ])
 
 export const EntranceAnimationSchema = z.object({
   type: EntranceAnimationTypeSchema,
-  duration: z.number().min(0.1).max(5).default(1)
+  duration: z.number().min(0).max(5).default(1),
+  easing: EasingFunctionSchema.optional()
+})
+
+// Exit Animation Types
+export const ExitAnimationTypeSchema = z.enum([
+  'fade_out',
+  'slide_out_left',
+  'slide_out_right',
+  'slide_out_top',
+  'slide_out_bottom',
+  'zoom_out',
+  'bounce_out',
+  'rotate_out',
+  'spin_out',
+  'flip_out_x',
+  'flip_out_horizontal',
+  'flip_out_y',
+  'flip_out_vertical',
+  'scale_out',
+  'blur_out',
+  'focus_out',
+  'elastic_out'
+])
+
+export const ExitAnimationSchema = z.object({
+  type: ExitAnimationTypeSchema,
+  duration: z.number().min(0).max(5).default(1),
+  easing: EasingFunctionSchema.optional()
 })
 
 // Transition Types
@@ -56,6 +118,7 @@ export const TransitionTypeSchema = z.enum([
   'fade_to_white',
   'fadeblack',
   'fadewhite',
+  'crossfade_blur',
   // Push transitions
   'push_left',
   'push_right',
@@ -73,6 +136,7 @@ export const TransitionTypeSchema = z.enum([
   'wiperight',
   'wipeup',
   'wipedown',
+  'diagonal_wipe',
   // Special transitions
   'iris',
   'zoom_out_in',
@@ -81,13 +145,26 @@ export const TransitionTypeSchema = z.enum([
   'slide',
   'scene_slide',
   'pan',
-  'camera_move'
+  'camera_move',
+  'dissolve',
+  'morph',
+  // Shape transitions
+  'box_in',
+  'box_out',
+  'clock_wipe',
+  'radial_wipe',
+  // Rotation transitions
+  'rotate_transition',
+  'spin_transition',
+  // No transition
+  'none'
 ])
 
 export const TransitionSchema = z.object({
   after_slide: z.number().int().min(0),
   type: TransitionTypeSchema,
-  duration: z.number().min(0.1).max(3).default(0.5)
+  duration: z.number().min(0).max(3).default(0.5),
+  easing: EasingFunctionSchema.optional()
 })
 
 // Layer Animation Modes
@@ -147,7 +224,8 @@ export const LayerConfigSchema = z.object({
   skip_rate: z.number().int().min(1).max(20).optional().default(8),
   scale: z.number().min(0.1).max(10).optional().default(1),
   opacity: z.number().min(0).max(1).optional().default(1),
-  entrance_animation: EntranceAnimationSchema.optional()
+  entrance_animation: EntranceAnimationSchema.optional(),
+  exit_animation: ExitAnimationSchema.optional()
 })
 
 // Slide Configuration
@@ -170,8 +248,11 @@ export const AnimationConfigSchema = z.object({
   transitions: z.array(TransitionSchema).optional()
 })
 
+export type EasingFunction = z.infer<typeof EasingFunctionSchema>
 export type EntranceAnimationType = z.infer<typeof EntranceAnimationTypeSchema>
 export type EntranceAnimation = z.infer<typeof EntranceAnimationSchema>
+export type ExitAnimationType = z.infer<typeof ExitAnimationTypeSchema>
+export type ExitAnimation = z.infer<typeof ExitAnimationSchema>
 export type TransitionType = z.infer<typeof TransitionTypeSchema>
 export type Transition = z.infer<typeof TransitionSchema>
 export type LayerMode = z.infer<typeof LayerModeSchema>
