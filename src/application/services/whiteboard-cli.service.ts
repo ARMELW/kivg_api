@@ -86,7 +86,14 @@ export type TransitionType =
   | 'camera_move'
 
 // Layer modes as per integration guide
-export type LayerMode = 'draw' | 'erase' | 'flood_fill' | 'coloriage' | 'path_follow' | 'path_follow_then_color' | 'static'
+export type LayerMode =
+  | 'draw'
+  | 'erase'
+  | 'flood_fill'
+  | 'coloriage'
+  | 'path_follow'
+  | 'path_follow_then_color'
+  | 'static'
 
 export interface WhiteboardConfig {
   scene_width?: number
@@ -265,11 +272,11 @@ export class WhiteboardCliService {
     const transitions =
       scene.transitionType !== 'none'
         ? slides.slice(0, -1).map((slide: any, index: number) => ({
-            after_slide: index,
-            type: scene.transitionType || 'fade',
-            duration: 0.5,
-            pause_before: 0.5
-          }))
+          after_slide: index,
+          type: scene.transitionType || 'fade',
+          duration: 0.5,
+          pause_before: 0.5
+        }))
         : []
 
     return {
@@ -298,7 +305,7 @@ export class WhiteboardCliService {
       canvasWidth,
       canvasHeight
     )
-    const finalPosition = this.calculateFinalPosition(layer, defaultCamera, currentCamera, canvasWidth, canvasHeight)
+    //const finalPosition = this.calculateFinalPosition(layer, defaultCamera, currentCamera, canvasWidth, canvasHeight)
 
     const baseConfig = {
       type: layer.type || 'image',
@@ -379,7 +386,10 @@ export class WhiteboardCliService {
             width: finalDimensions.width || 100,
             height: finalDimensions.height || 100
           },
-          position: finalPosition
+          position: {
+            x: layer.camera_position.x,
+            y: layer.camera_position.y
+          }
         }
 
       case 'image':
@@ -392,52 +402,6 @@ export class WhiteboardCliService {
             y: layer.camera_position.y
           }
         }
-    }
-  }
-
-  /**
-   * Calcule la position finale dans l'espace 1920x1080
-   * camera_position est la position dans la caméra par défaut
-   * On doit la transformer pour la caméra actuelle
-   */
-  private calculateFinalPosition(
-    layer: any,
-    defaultCamera?: Camera | null,
-    currentCamera?: Camera | null,
-    canvasWidth: number = 1920,
-    canvasHeight: number = 1080
-  ): { x: number; y: number } {
-    // Si pas de camera_position, utiliser position par défaut
-    if (!layer.camera_position) {
-      return layer.position || { x: 0, y: 0 }
-    }
-
-    // Si pas de caméra actuelle, projeter directement camera_position
-    if (!currentCamera || !currentCamera.position) {
-      return layer.camera_position
-    }
-
-    // camera_position est la position dans la caméra par défaut
-    // Il faut la projeter vers l'espace 1920x1080 selon la caméra actuelle
-    const zoom = currentCamera.scale || 1
-    const cameraPhysicalWidth = currentCamera.width || 800
-    const cameraPhysicalHeight = currentCamera.height || 450
-
-    // Viewport de la caméra actuelle
-    const viewportWidth = cameraPhysicalWidth / zoom
-    const viewportHeight = cameraPhysicalHeight / zoom
-
-    // Facteur de projection vers 1920x1080
-    const projectionScaleX = canvasWidth / viewportWidth
-    const projectionScaleY = canvasHeight / viewportHeight
-
-    // Projeter camera_position (de la caméra par défaut) vers l'espace final
-    const finalX = layer.camera_position.x * projectionScaleX
-    const finalY = layer.camera_position.y * projectionScaleY
-
-    return {
-      x: Math.max(0, finalX),
-      y: Math.max(0, finalY)
     }
   }
 
@@ -564,18 +528,19 @@ export class WhiteboardCliService {
     const configPath = `/tmp/preview_${configId}_config.json`
     let childProcess: any = null
     let timeoutHandle: NodeJS.Timeout | null = null
-    const debugDir = './preview-debug'
-    const debugPath = `${debugDir}/preview_debug_${Date.now()}.json`
+    //const debugDir = './preview-debug'
+    //const debugPath = `${debugDir}/preview_debug_${Date.now()}.json`
     let hasCompleted = false
 
     try {
       await writeFile(configPath, JSON.stringify(config))
 
       const preset = QUALITY_PRESETS[options.quality]
-      try {
+      /**try {
         await import('node:fs/promises').then((fs) => fs.mkdir(debugDir, { recursive: true }))
       } catch {}
-      await writeFile(debugPath, JSON.stringify(config, null, 2))
+     await writeFile(debugPath, JSON.stringify(config, null, 2))
+     **/
 
       const args = [
         this.scriptPath,
