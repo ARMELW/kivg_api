@@ -272,11 +272,11 @@ export class WhiteboardCliService {
     const transitions =
       scene.transitionType !== 'none'
         ? slides.slice(0, -1).map((slide: any, index: number) => ({
-          after_slide: index,
-          type: scene.transitionType || 'fade',
-          duration: 0.5,
-          pause_before: 0.5
-        }))
+            after_slide: index,
+            type: scene.transitionType || 'fade',
+            duration: 0.5,
+            pause_before: 0.5
+          }))
         : []
 
     return {
