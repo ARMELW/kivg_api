@@ -35,7 +35,7 @@ describe('AnimationValidationService', () => {
                 z_index: 1,
                 entrance_animation: {
                   type: 'fade_in',
-                  duration: 1.0
+                  duration: 1
                 }
               }
             ]

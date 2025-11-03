@@ -243,9 +243,9 @@ export class AnimationController implements Routes {
                 schema: z.object({
                   success: z.boolean(),
                   data: z.object({
-                    simple: z.any(),
-                    dynamic: z.any(),
-                    textFocused: z.any()
+                    simple: AnimationConfigSchema,
+                    dynamic: AnimationConfigSchema,
+                    textFocused: AnimationConfigSchema
                   })
                 })
               }
