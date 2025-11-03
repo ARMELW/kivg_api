@@ -1,6 +1,7 @@
 import { App } from './app'
 import {
   AIUsageController,
+  AnimationController,
   AssetController,
   AudioController,
   ChannelController,
@@ -42,7 +43,8 @@ const app = new App([
   new TemplateController(),
   new AIController(),
   new AIUsageController(),
-  new FontController()
+  new FontController(),
+  new AnimationController()
 ]).getApp()
 
 console.info('[SERVER] ✅ App initialized successfully')
