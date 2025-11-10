@@ -1,0 +1,1 @@
+ALTER TABLE "shapes" ADD COLUMN "template_json_path" text;

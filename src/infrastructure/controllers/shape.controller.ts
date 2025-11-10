@@ -3,6 +3,7 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { z } from 'zod'
 import { CacheKeys } from '@/application/services/cache.service'
 import { ShapeProcessingService } from '@/application/services/shape-processing.service'
+import { ShapeTemplateService } from '@/application/services/shape-template.service'
 import type { Routes } from '@/domain/types'
 import { uploadFile } from '../config/upload.config'
 import { cacheMiddleware, invalidateCacheMiddleware } from '../middlewares/cache.middleware'
@@ -13,11 +14,13 @@ export class ShapeController implements Routes {
   public controller: OpenAPIHono
   private shapeRepository: ShapeRepository
   private shapeProcessingService: ShapeProcessingService
+  private shapeTemplateService: ShapeTemplateService
 
   constructor() {
     this.controller = new OpenAPIHono()
     this.shapeRepository = new ShapeRepository()
     this.shapeProcessingService = new ShapeProcessingService()
+    this.shapeTemplateService = new ShapeTemplateService()
     this.initRoutes()
   }
 
@@ -66,6 +69,7 @@ export class ShapeController implements Routes {
                     tags: z.array(z.string()),
                     category: z.string(),
                     shapeData: z.any().optional(),
+                    templateJsonPath: z.string().optional(),
                     uploadedAt: z.string(),
                     userId: z.string()
                   })
@@ -125,6 +129,31 @@ export class ShapeController implements Routes {
           const uploadResult = await uploadFile(buffer, 'shapes', file.type)
           const thumbnailResult = await uploadFile(thumbnailBuffer, 'shapes/thumbnails', 'image/webp')
 
+          // Generate template JSON configuration
+          // Use the uploaded SVG file path for template generation
+          const svgPath = uploadResult.url.replace(/^\//, '') // Remove leading slash for filesystem path
+          const templateWidth = shapeData.width || 640
+          const templateHeight = shapeData.height || 640
+
+          let templateJsonPath: string | undefined
+
+          // Only generate template if Python script is available
+          if (await this.shapeTemplateService.isAvailable()) {
+            const templateResult = await this.shapeTemplateService.generateTemplate(
+              svgPath,
+              templateWidth,
+              templateHeight
+            )
+
+            if (templateResult.success && templateResult.templatePath) {
+              templateJsonPath = templateResult.templatePath
+            } else {
+              console.warn(`Template generation failed: ${templateResult.error}`)
+            }
+          } else {
+            console.warn('Shape template service not available, skipping template generation')
+          }
+
           const shape = await this.shapeRepository.create({
             userId: user.id,
             name,
@@ -142,6 +171,7 @@ export class ShapeController implements Routes {
               pathData: pathData.length > 0 ? pathData[0] : undefined,
               isEditable: true
             },
+            templateJsonPath,
             usageCount: 0
           })
 

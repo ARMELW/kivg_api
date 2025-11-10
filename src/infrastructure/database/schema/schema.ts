@@ -205,6 +205,7 @@ export const shapes = pgTable('shapes', {
     strokeWidth?: number
     isEditable?: boolean
   }>(),
+  templateJsonPath: text('template_json_path'), // Path to the generated template JSON configuration
   lastUsed: timestamp('last_used'),
   usageCount: integer('usage_count').notNull().default(0),
   uploadedAt: timestamp('uploaded_at').notNull().defaultNow(),

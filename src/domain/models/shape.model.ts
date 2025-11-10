@@ -23,6 +23,7 @@ export const ShapeAssetSchema = z.object({
       isEditable: z.boolean().default(true) // Whether colors/stroke can be edited
     })
     .optional(),
+  templateJsonPath: z.string().optional(), // Path to the generated template JSON configuration
   lastUsed: z.date().optional(),
   usageCount: z.number().int().default(0),
   uploadedAt: z.date(),
