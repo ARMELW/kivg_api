@@ -155,6 +155,8 @@ export interface WhiteboardConfig {
         arrow_size?: number
         duration?: number
       }
+      reveal_mode?: boolean
+      reveal_radius?: number
       shape_config?: {
         shape: 'rectangle' | 'circle' | 'triangle' | 'polygon'
         color?: string | number[]
@@ -405,13 +407,16 @@ export class WhiteboardCliService {
         return {
           ...baseConfig,
           svg_path: layer.svg_path || '',
+          path_template: layer.path_template,
           svg_sampling_rate: layer.svg_sampling_rate || 12,
           svg_reverse: layer.svg_reverse || false,
+          reveal_radius: layer.reveal_radius || 1,
+          apply_final_fill: true,
+          final_fill_color: layer.shape_config.fill_color || '#cccccc',
+          reveal_mode: true,
           shape_config: {
             //shape: layer.shapeName || 'rectangle',
             color: layer.shape_config.color || '#000000',
-            fill_color: layer.shape_config.fill_color || '#cccccc',
-            stroke_width: layer.shape_config.stroke_width || 2,
             width: finalDimensions.width || 100,
             height: finalDimensions.height || 100
           },
@@ -557,19 +562,18 @@ export class WhiteboardCliService {
     const configPath = `/tmp/preview_${configId}_config.json`
     let childProcess: any = null
     let timeoutHandle: NodeJS.Timeout | null = null
-    //const debugDir = './preview-debug'
-    //const debugPath = `${debugDir}/preview_debug_${Date.now()}.json`
+    const debugDir = './preview-debug'
+    const debugPath = `${debugDir}/preview_debug_${Date.now()}.json`
     let hasCompleted = false
 
     try {
       await writeFile(configPath, JSON.stringify(config))
 
       const preset = QUALITY_PRESETS[options.quality]
-      /**try {
+      try {
         await import('node:fs/promises').then((fs) => fs.mkdir(debugDir, { recursive: true }))
       } catch {}
-     await writeFile(debugPath, JSON.stringify(config, null, 2))
-     **/
+      await writeFile(debugPath, JSON.stringify(config, null, 2))
 
       const args = [
         this.scriptPath,

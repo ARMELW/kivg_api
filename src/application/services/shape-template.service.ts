@@ -15,9 +15,9 @@ export class ShapeTemplateService {
   private templatesDir: string
 
   constructor() {
-    this.pythonPath = process.env.PYTHON_PATH || 'python3'
+    this.pythonPath = process.env.PYTHON_PATH || 'python'
     const rootDir = process.env.NODE_ENV === 'production' ? '/usr/src/app' : process.cwd()
-    this.scriptPath = join(rootDir, 'path_template.py')
+    this.scriptPath = process.env.PATH_TEMPLATE_CLI_PATH || '/home/armel/dev/whiteboard/animator/path_template.py'
     this.templatesDir = join(rootDir, 'uploads', 'shape-templates')
 
     // Ensure templates directory exists
@@ -35,18 +35,9 @@ export class ShapeTemplateService {
    */
   async generateTemplate(svgPath: string, width: number, height: number): Promise<TemplateGenerationResult> {
     try {
-      // Validate SVG file exists
-      if (!existsSync(svgPath)) {
-        return {
-          success: false,
-          error: `SVG file not found: ${svgPath}`
-        }
-      }
-
       // Generate unique template filename based on SVG filename
-      const svgFilename = svgPath.split('/').pop()?.replace('.svg', '') || 'template'
       const timestamp = Date.now()
-      const templateFilename = `${svgFilename}_${timestamp}.json`
+      const templateFilename = `svg_shape_template_${timestamp}.json`
       const templatePath = join(this.templatesDir, templateFilename)
 
       // Execute Python script
@@ -78,7 +69,10 @@ export class ShapeTemplateService {
     height: number
   ): Promise<TemplateGenerationResult> {
     return new Promise((resolve) => {
-      const args = ['create', svgPath, templatePath, width.toString(), height.toString()]
+      const args = ['create', svgPath, templatePath.toString(), width.toString(), height.toString()]
+
+      // Log the command for debugging
+      console.log('[ShapeTemplateService] Running:', this.pythonPath, this.scriptPath, ...args)
 
       const child = spawn(this.pythonPath, [this.scriptPath, ...args])
 
