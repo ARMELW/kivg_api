@@ -134,7 +134,7 @@ export interface WhiteboardConfig {
     duration: number
     skip_rate?: number
     layers?: Array<{
-      type: 'image' | 'text' | 'arrow' | 'shape' | 'video' | 'svg'
+      type: 'image' | 'text' | 'arrow' | 'shape' | 'video' | 'svg' | 'audio'
       image_path?: string
       svg_path?: string
       text_config?: {
@@ -145,6 +145,17 @@ export interface WhiteboardConfig {
         align?: string
         style?: string
         position?: { x: number; y: number }
+        direction?: 'ltr' | 'rtl' // Bidirectional text rendering
+        draw_mode?: 'ltr' | 'rtl' // Animation direction
+      }
+      audio_config?: {
+        file_path: string
+        volume?: number
+        start_time?: number
+        end_time?: number
+        fade_in?: number
+        fade_out?: number
+        loop?: boolean
       }
       arrow_config?: {
         start: [number, number]
@@ -193,6 +204,15 @@ export interface WhiteboardConfig {
     duration: number
     pause_before?: number
   }>
+  audio?: {
+    file_path?: string
+    volume?: number
+    start_time?: number
+    end_time?: number
+    fade_in?: number
+    fade_out?: number
+    loop?: boolean
+  }
 }
 
 export interface WhiteboardOptions {
@@ -310,9 +330,39 @@ export class WhiteboardCliService {
           }))
         : []
 
+    // Build audio configuration from scene
+    let audioConfig: WhiteboardConfig['audio'] = undefined
+    if (scene.sceneAudio || scene.audio) {
+      const sceneAudioData = scene.sceneAudio || scene.audio
+
+      // Handle both old and new audio format
+      // Only create audio config if there's a valid file path
+      if (sceneAudioData && typeof sceneAudioData === 'object') {
+        const filePath = sceneAudioData.fileUrl || sceneAudioData.file_path
+
+        if (filePath) {
+          audioConfig = {
+            file_path: filePath,
+            volume: sceneAudioData.volume !== undefined ? sceneAudioData.volume : 1,
+            start_time: sceneAudioData.trimConfig?.startTime || sceneAudioData.start_time,
+            end_time: sceneAudioData.trimConfig?.endTime || sceneAudioData.end_time,
+            fade_in: sceneAudioData.fadeConfig?.fadeIn || sceneAudioData.fade_in,
+            fade_out: sceneAudioData.fadeConfig?.fadeOut || sceneAudioData.fade_out,
+            loop: sceneAudioData.loop !== undefined ? sceneAudioData.loop : false
+          }
+
+          // Remove undefined values
+          audioConfig = Object.fromEntries(
+            Object.entries(audioConfig).filter(([, v]) => v !== undefined)
+          ) as WhiteboardConfig['audio']
+        }
+      }
+    }
+
     return {
       slides,
-      transitions: transitions.length > 0 ? transitions : undefined
+      transitions: transitions.length > 0 ? transitions : undefined,
+      audio: audioConfig
     }
   }
 
@@ -373,7 +423,9 @@ export class WhiteboardCliService {
             size: layer.text_config.size || 32,
             style: layer.text_config.style || 'normal',
             color: layer.text_config.color || '#000000',
-            align: layer.text_config.align || 'left'
+            align: layer.text_config.align || 'left',
+            direction: layer.text_config.direction || 'ltr',
+            draw_mode: layer.text_config.draw_mode || 'ltr'
           }
         }
 
@@ -423,6 +475,20 @@ export class WhiteboardCliService {
           position: {
             x: layer.camera_position.x,
             y: layer.camera_position.y
+          }
+        }
+
+      case 'audio':
+        return {
+          ...baseConfig,
+          audio_config: {
+            file_path: layer.audio_config?.file_path || layer.fileUrl || '',
+            volume: layer.audio_config?.volume !== undefined ? layer.audio_config.volume : 1,
+            start_time: layer.audio_config?.start_time || layer.trimConfig?.startTime,
+            end_time: layer.audio_config?.end_time || layer.trimConfig?.endTime,
+            fade_in: layer.audio_config?.fade_in || layer.fadeConfig?.fadeIn,
+            fade_out: layer.audio_config?.fade_out || layer.fadeConfig?.fadeOut,
+            loop: layer.audio_config?.loop !== undefined ? layer.audio_config.loop : false
           }
         }
 
