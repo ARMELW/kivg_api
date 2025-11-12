@@ -208,7 +208,9 @@ La documentation API est disponible sur :
 ### Autres Documentations
 
 - [Architecture du Projet](./docs/architecture/index.md)
-- [API Overview](./API_DOCUMENTATION.md)
+- [API Overview](./docs/API_DOCUMENTATION.md)
+- [Guide de Gestion Audio](./docs/AUDIO_MANAGEMENT_GUIDE.md)
+- [Guide des Animations Whiteboard](./docs/WHITEBOARD_ANIMATION_GUIDE.md)
 
 ## Tests 🧪
 

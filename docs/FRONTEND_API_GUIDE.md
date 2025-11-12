@@ -1165,6 +1165,8 @@ const deleteAsset = async (id: string): Promise<void> => {
 
 Gestion des fichiers audio pour vos projets.
 
+**📖 Pour un guide complet sur la gestion audio incluant les configurations avancées, exemples pratiques, et bonnes pratiques, consultez le [Guide Complet de Gestion Audio](./AUDIO_MANAGEMENT_GUIDE.md).**
+
 #### Uploader un Fichier Audio
 
 **Endpoint:** `POST /v1/audio/upload`
