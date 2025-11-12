@@ -17,7 +17,7 @@ export class ShapeTemplateService {
   constructor() {
     this.pythonPath = process.env.PYTHON_PATH || 'python'
     const rootDir = process.env.NODE_ENV === 'production' ? '/usr/src/app' : process.cwd()
-    this.scriptPath = process.env.PATH_TEMPLATE_CLI_PATH || '/home/armel/dev/whiteboard/animator/path_template.py'
+    this.scriptPath = process.env.PATH_TEMPLATE_CLI_PATH || ''
     this.templatesDir = join(rootDir, 'uploads', 'shape-templates')
 
     // Ensure templates directory exists

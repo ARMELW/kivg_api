@@ -262,7 +262,7 @@ export class WhiteboardCliService {
 
   constructor(storageService?: StorageService) {
     this.pythonPath = 'python'
-    this.scriptPath = process.env.WHITEBOARD_CLI_PATH || '/home/armel/dev/whiteboard/animator/whiteboard_animator.py'
+    this.scriptPath = process.env.WHITEBOARD_CLI_PATH || ''
     this.storageService = storageService || new StorageService()
   }
 
@@ -303,11 +303,11 @@ export class WhiteboardCliService {
     const transitions =
       scene.transitionType !== 'none'
         ? slides.slice(0, -1).map((slide: any, index: number) => ({
-            after_slide: index,
-            type: scene.transitionType || 'fade',
-            duration: 0.5,
-            pause_before: 0.5
-          }))
+          after_slide: index,
+          type: scene.transitionType || 'fade',
+          duration: 0.5,
+          pause_before: 0.5
+        }))
         : []
 
     return {
@@ -338,7 +338,7 @@ export class WhiteboardCliService {
     )
     //const finalPosition = this.calculateFinalPosition(layer, defaultCamera, currentCamera, canvasWidth, canvasHeight)
 
-    const baseConfig = {
+    const baseConfig: any = {
       type: layer.type || 'image',
       z_index: layer.zIndex ?? 0,
       mode: layer.mode || 'draw',
@@ -354,6 +354,12 @@ export class WhiteboardCliService {
         (layer.animationType ? { type: layer.animationType, duration: layer.animationSpeed || 1 } : undefined),
       exit_animation: layer.exit_animation ?? undefined,
       morph: layer.morph ?? undefined
+    }
+    if (layer.eraser_config) {
+      baseConfig.eraser_config = layer.eraser_config
+    }
+    if (layer.morphing_config) {
+      baseConfig.morphing_config = layer.morphing_config
     }
 
     switch (layer.type) {
@@ -572,7 +578,7 @@ export class WhiteboardCliService {
       const preset = QUALITY_PRESETS[options.quality]
       try {
         await import('node:fs/promises').then((fs) => fs.mkdir(debugDir, { recursive: true }))
-      } catch {}
+      } catch { }
       await writeFile(debugPath, JSON.stringify(config, null, 2))
 
       const args = [
