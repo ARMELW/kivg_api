@@ -71,9 +71,6 @@ export class ShapeTemplateService {
     return new Promise((resolve) => {
       const args = ['create', svgPath, templatePath.toString(), width.toString(), height.toString()]
 
-      // Log the command for debugging
-      console.log('[ShapeTemplateService] Running:', this.pythonPath, this.scriptPath, ...args)
-
       const child = spawn(this.pythonPath, [this.scriptPath, ...args])
 
       let stdout = ''

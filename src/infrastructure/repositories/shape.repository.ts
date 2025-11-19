@@ -84,8 +84,9 @@ export class ShapeRepository implements ShapeRepositoryInterface {
       thumbnailUrl: data.thumbnailUrl,
       type: data.type,
       size: data.size,
-      width: data.width,
-      height: data.height,
+      // Ensure width/height are integers to match DB schema (avoid inserting floats)
+      width: data.width !== undefined && data.width !== null ? Math.round(data.width) : undefined,
+      height: data.height !== undefined && data.height !== null ? Math.round(data.height) : undefined,
       tags: data.tags,
       category: data.category,
       shapeData: data.shapeData,
@@ -106,10 +107,19 @@ export class ShapeRepository implements ShapeRepositoryInterface {
     id: string,
     data: Partial<Omit<ShapeAsset, 'id' | 'userId' | 'uploadedAt' | 'updatedAt'>>
   ): Promise<ShapeAsset> {
+    // Normalize numeric fields to match DB column types
+    const normalized: any = { ...data }
+    if (normalized.width !== undefined && normalized.width !== null) {
+      normalized.width = Math.round(normalized.width)
+    }
+    if (normalized.height !== undefined && normalized.height !== null) {
+      normalized.height = Math.round(normalized.height)
+    }
+
     await db
       .update(shapes)
       .set({
-        ...data,
+        ...normalized,
         updatedAt: new Date()
       })
       .where(eq(shapes.id, id))
