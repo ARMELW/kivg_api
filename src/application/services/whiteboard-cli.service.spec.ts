@@ -418,4 +418,521 @@ describe('WhiteboardCliService', () => {
       expect(config.audio?.volume).toBe(0.3)
     })
   })
+
+  describe('Slide-level Audio Features', () => {
+    it('should support slide-level voiceover audio', () => {
+      const scene: Scene = {
+        id: 'test-scene',
+        projectId: 'test-project',
+        title: 'Slide Audio Test',
+        duration: 10,
+        animation: 'fade',
+        layers: [],
+        cameras: [],
+        sceneCameras: [
+          {
+            id: 'camera-1',
+            name: 'Camera 1',
+            position: { x: 0.5, y: 0.5 },
+            scale: 1,
+            width: 800,
+            height: 450,
+            isDefault: true,
+            audio: {
+              file_path: 'audio/slide1_voiceover.mp3',
+              volume: 0.8,
+              loop: false
+            }
+          }
+        ],
+        multiTimeline: {},
+        audio: {},
+        transitionType: 'none',
+        draggingSpeed: 1,
+        slideDuration: 0,
+        syncSlideWithVoice: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const config = service.generateConfig(scene)
+
+      expect(config.slides).toHaveLength(1)
+      expect(config.slides[0].audio).toBeDefined()
+      expect(config.slides[0].audio?.file_path).toBe('audio/slide1_voiceover.mp3')
+      expect(config.slides[0].audio?.volume).toBe(0.8)
+      expect(config.slides[0].audio?.loop).toBe(false)
+    })
+
+    it('should support typewriter audio effect', () => {
+      const scene: Scene = {
+        id: 'test-scene',
+        projectId: 'test-project',
+        title: 'Typewriter Audio Test',
+        duration: 10,
+        animation: 'fade',
+        layers: [],
+        cameras: [],
+        sceneCameras: [
+          {
+            id: 'camera-1',
+            name: 'Camera 1',
+            position: { x: 0.5, y: 0.5 },
+            scale: 1,
+            width: 800,
+            height: 450,
+            isDefault: true,
+            audio: {
+              typewriter: {
+                start_time: 1,
+                num_characters: 50,
+                char_interval: 0.08,
+                volume: 0.4
+              }
+            }
+          }
+        ],
+        multiTimeline: {},
+        audio: {},
+        transitionType: 'none',
+        draggingSpeed: 1,
+        slideDuration: 0,
+        syncSlideWithVoice: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const config = service.generateConfig(scene)
+
+      expect(config.slides[0].audio).toBeDefined()
+      expect(config.slides[0].audio?.typewriter).toBeDefined()
+      expect(config.slides[0].audio?.typewriter?.start_time).toBe(1)
+      expect(config.slides[0].audio?.typewriter?.num_characters).toBe(50)
+      expect(config.slides[0].audio?.typewriter?.char_interval).toBe(0.08)
+      expect(config.slides[0].audio?.typewriter?.volume).toBe(0.4)
+    })
+
+    it('should support drawing sound effect', () => {
+      const scene: Scene = {
+        id: 'test-scene',
+        projectId: 'test-project',
+        title: 'Drawing Sound Test',
+        duration: 12,
+        animation: 'fade',
+        layers: [],
+        cameras: [],
+        sceneCameras: [
+          {
+            id: 'camera-1',
+            name: 'Camera 1',
+            position: { x: 0.5, y: 0.5 },
+            scale: 1,
+            width: 800,
+            height: 450,
+            isDefault: true,
+            audio: {
+              drawing_sound: {
+                start_time: 0,
+                duration: 8,
+                volume: 0.25
+              }
+            }
+          }
+        ],
+        multiTimeline: {},
+        audio: {},
+        transitionType: 'none',
+        draggingSpeed: 1,
+        slideDuration: 0,
+        syncSlideWithVoice: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const config = service.generateConfig(scene)
+
+      expect(config.slides[0].audio).toBeDefined()
+      expect(config.slides[0].audio?.drawing_sound).toBeDefined()
+      expect(config.slides[0].audio?.drawing_sound?.start_time).toBe(0)
+      expect(config.slides[0].audio?.drawing_sound?.duration).toBe(8)
+      expect(config.slides[0].audio?.drawing_sound?.volume).toBe(0.25)
+    })
+
+    it('should support voice-overs array', () => {
+      const scene: Scene = {
+        id: 'test-scene',
+        projectId: 'test-project',
+        title: 'Voice-overs Test',
+        duration: 10,
+        animation: 'fade',
+        layers: [],
+        cameras: [],
+        sceneCameras: [
+          {
+            id: 'camera-1',
+            name: 'Camera 1',
+            position: { x: 0.5, y: 0.5 },
+            scale: 1,
+            width: 800,
+            height: 450,
+            isDefault: true,
+            audio: {
+              voice_overs: [
+                {
+                  path: 'audio/slide2_narration.mp3',
+                  start_time: 0,
+                  volume: 0.9
+                }
+              ]
+            }
+          }
+        ],
+        multiTimeline: {},
+        audio: {},
+        transitionType: 'none',
+        draggingSpeed: 1,
+        slideDuration: 0,
+        syncSlideWithVoice: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const config = service.generateConfig(scene)
+
+      expect(config.slides[0].audio).toBeDefined()
+      expect(config.slides[0].audio?.voice_overs).toBeDefined()
+      expect(config.slides[0].audio?.voice_overs).toHaveLength(1)
+      expect(config.slides[0].audio?.voice_overs![0].path).toBe('audio/slide2_narration.mp3')
+      expect(config.slides[0].audio?.voice_overs![0].start_time).toBe(0)
+      expect(config.slides[0].audio?.voice_overs![0].volume).toBe(0.9)
+    })
+
+    it('should support slide-level sound effects', () => {
+      const scene: Scene = {
+        id: 'test-scene',
+        projectId: 'test-project',
+        title: 'Slide Sound Effects Test',
+        duration: 12,
+        animation: 'fade',
+        layers: [],
+        cameras: [],
+        sceneCameras: [
+          {
+            id: 'camera-1',
+            name: 'Camera 1',
+            position: { x: 0.5, y: 0.5 },
+            scale: 1,
+            width: 800,
+            height: 450,
+            isDefault: true,
+            audio: {
+              sound_effects: [
+                {
+                  path: 'audio/pencil_start.wav',
+                  start_time: 0,
+                  volume: 0.5
+                },
+                {
+                  path: 'audio/pencil_finish.wav',
+                  start_time: 7.5,
+                  volume: 0.5
+                }
+              ]
+            }
+          }
+        ],
+        multiTimeline: {},
+        audio: {},
+        transitionType: 'none',
+        draggingSpeed: 1,
+        slideDuration: 0,
+        syncSlideWithVoice: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const config = service.generateConfig(scene)
+
+      expect(config.slides[0].audio).toBeDefined()
+      expect(config.slides[0].audio?.sound_effects).toBeDefined()
+      expect(config.slides[0].audio?.sound_effects).toHaveLength(2)
+      expect(config.slides[0].audio?.sound_effects![0].path).toBe('audio/pencil_start.wav')
+      expect(config.slides[0].audio?.sound_effects![0].start_time).toBe(0)
+      expect(config.slides[0].audio?.sound_effects![1].path).toBe('audio/pencil_finish.wav')
+      expect(config.slides[0].audio?.sound_effects![1].start_time).toBe(7.5)
+    })
+
+    it('should support combined slide audio features', () => {
+      const scene: Scene = {
+        id: 'test-scene',
+        projectId: 'test-project',
+        title: 'Combined Slide Audio Test',
+        duration: 8,
+        animation: 'fade',
+        layers: [],
+        cameras: [],
+        sceneCameras: [
+          {
+            id: 'camera-1',
+            name: 'Camera 1',
+            position: { x: 0.5, y: 0.5 },
+            scale: 1,
+            width: 800,
+            height: 450,
+            isDefault: true,
+            audio: {
+              typewriter: {
+                start_time: 1,
+                num_characters: 35,
+                char_interval: 0.1,
+                volume: 0.35
+              },
+              drawing_sound: {
+                start_time: 0,
+                duration: 2,
+                volume: 0.2
+              },
+              voice_overs: [
+                {
+                  path: 'audio/final_message.mp3',
+                  start_time: 0,
+                  volume: 0.9
+                }
+              ],
+              sound_effects: [
+                {
+                  path: 'audio/magic_sparkle.wav',
+                  start_time: 5,
+                  volume: 0.7
+                }
+              ]
+            }
+          }
+        ],
+        multiTimeline: {},
+        audio: {},
+        transitionType: 'none',
+        draggingSpeed: 1,
+        slideDuration: 0,
+        syncSlideWithVoice: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const config = service.generateConfig(scene)
+
+      expect(config.slides[0].audio).toBeDefined()
+
+      // Check typewriter
+      expect(config.slides[0].audio?.typewriter).toBeDefined()
+      expect(config.slides[0].audio?.typewriter?.num_characters).toBe(35)
+
+      // Check drawing sound
+      expect(config.slides[0].audio?.drawing_sound).toBeDefined()
+      expect(config.slides[0].audio?.drawing_sound?.duration).toBe(2)
+
+      // Check voice-overs
+      expect(config.slides[0].audio?.voice_overs).toHaveLength(1)
+      expect(config.slides[0].audio?.voice_overs![0].path).toBe('audio/final_message.mp3')
+
+      // Check sound effects
+      expect(config.slides[0].audio?.sound_effects).toHaveLength(1)
+      expect(config.slides[0].audio?.sound_effects![0].path).toBe('audio/magic_sparkle.wav')
+    })
+  })
+
+  describe('Layer-level Sound Effects', () => {
+    it('should support sound effects on text layers', () => {
+      const scene: Scene = {
+        id: 'test-scene',
+        projectId: 'test-project',
+        title: 'Layer Sound Effects Test',
+        duration: 8,
+        animation: 'fade',
+        layers: [
+          {
+            id: 'layer-1',
+            name: 'Text with sounds',
+            type: 'text',
+            mode: 'draw',
+            position: { x: 100, y: 100 },
+            camera_position: { x: 100, y: 100 },
+            width: 200,
+            height: 50,
+            zIndex: 1,
+            scale: 1,
+            opacity: 1,
+            text_config: {
+              text: 'Hello World',
+              font: 'DejaVuSans',
+              size: 64,
+              color: '#0066CC',
+              align: 'center',
+              style: 'bold'
+            },
+            audio: {
+              sound_effects: [
+                {
+                  path: 'audio/text_pop.wav',
+                  start_time: 0.5,
+                  volume: 0.7,
+                  duration: 0.3
+                }
+              ]
+            }
+          }
+        ],
+        cameras: [],
+        sceneCameras: [],
+        multiTimeline: {},
+        audio: {},
+        transitionType: 'none',
+        draggingSpeed: 1,
+        slideDuration: 0,
+        syncSlideWithVoice: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const config = service.generateConfig(scene)
+
+      expect(config.slides[0].layers).toHaveLength(1)
+      const textLayer = config.slides[0].layers![0]
+      expect(textLayer.audio).toBeDefined()
+      expect(textLayer.audio?.sound_effects).toBeDefined()
+      expect(textLayer.audio?.sound_effects).toHaveLength(1)
+      expect(textLayer.audio?.sound_effects![0].path).toBe('audio/text_pop.wav')
+      expect(textLayer.audio?.sound_effects![0].start_time).toBe(0.5)
+      expect(textLayer.audio?.sound_effects![0].volume).toBe(0.7)
+      expect(textLayer.audio?.sound_effects![0].duration).toBe(0.3)
+    })
+
+    it('should support multiple sound effects on a layer', () => {
+      const scene: Scene = {
+        id: 'test-scene',
+        projectId: 'test-project',
+        title: 'Multiple Sound Effects Test',
+        duration: 10,
+        animation: 'fade',
+        layers: [
+          {
+            id: 'layer-1',
+            name: 'Text with multiple sounds',
+            type: 'text',
+            mode: 'draw',
+            position: { x: 100, y: 250 },
+            camera_position: { x: 100, y: 250 },
+            width: 200,
+            height: 50,
+            zIndex: 1,
+            scale: 1,
+            opacity: 1,
+            text_config: {
+              text: 'Amazing Effect',
+              font: 'DejaVuSans',
+              size: 58,
+              color: '#9900CC',
+              align: 'center',
+              style: 'bold'
+            },
+            audio: {
+              sound_effects: [
+                {
+                  path: 'audio/impact_1.wav',
+                  start_time: 0.5,
+                  volume: 0.6,
+                  duration: 0.4
+                },
+                {
+                  path: 'audio/impact_2.wav',
+                  start_time: 3,
+                  volume: 0.6,
+                  duration: 0.4
+                },
+                {
+                  path: 'audio/final_ding.wav',
+                  start_time: 6,
+                  volume: 0.8
+                }
+              ]
+            }
+          }
+        ],
+        cameras: [],
+        sceneCameras: [],
+        multiTimeline: {},
+        audio: {},
+        transitionType: 'none',
+        draggingSpeed: 1,
+        slideDuration: 0,
+        syncSlideWithVoice: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const config = service.generateConfig(scene)
+
+      const textLayer = config.slides[0].layers![0]
+      expect(textLayer.audio?.sound_effects).toHaveLength(3)
+      expect(textLayer.audio?.sound_effects![0].path).toBe('audio/impact_1.wav')
+      expect(textLayer.audio?.sound_effects![1].path).toBe('audio/impact_2.wav')
+      expect(textLayer.audio?.sound_effects![2].path).toBe('audio/final_ding.wav')
+    })
+
+    it('should support sound effects on shape layers', () => {
+      const scene: Scene = {
+        id: 'test-scene',
+        projectId: 'test-project',
+        title: 'Shape Sound Effects Test',
+        duration: 12,
+        animation: 'fade',
+        layers: [
+          {
+            id: 'layer-1',
+            name: 'Shape with sound',
+            type: 'shape',
+            mode: 'draw',
+            position: { x: 200, y: 200 },
+            camera_position: { x: 200, y: 200 },
+            width: 100,
+            height: 100,
+            zIndex: 1,
+            scale: 1,
+            opacity: 1,
+            shape_config: {
+              color: '#00CC66',
+              fill_color: '#cccccc'
+            },
+            audio: {
+              sound_effects: [
+                {
+                  path: 'audio/swoosh.wav',
+                  start_time: 1,
+                  volume: 0.7,
+                  duration: 0.5
+                }
+              ]
+            }
+          }
+        ],
+        cameras: [],
+        sceneCameras: [],
+        multiTimeline: {},
+        audio: {},
+        transitionType: 'none',
+        draggingSpeed: 1,
+        slideDuration: 0,
+        syncSlideWithVoice: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      const config = service.generateConfig(scene)
+
+      const shapeLayer = config.slides[0].layers![0]
+      expect(shapeLayer.audio).toBeDefined()
+      expect(shapeLayer.audio?.sound_effects).toHaveLength(1)
+      expect(shapeLayer.audio?.sound_effects![0].path).toBe('audio/swoosh.wav')
+    })
+  })
 })
