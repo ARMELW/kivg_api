@@ -124,15 +124,73 @@ export type LayerMode =
   | 'path_follow_then_color'
   | 'static'
 
+// Sound effect configuration
+export interface SoundEffect {
+  path: string
+  start_time: number
+  volume?: number
+  duration?: number
+}
+
+// Typewriter audio configuration
+export interface TypewriterAudio {
+  start_time: number
+  num_characters: number
+  char_interval: number
+  volume?: number
+}
+
+// Drawing sound configuration
+export interface DrawingSound {
+  start_time: number
+  duration: number
+  volume?: number
+}
+
+// Voice-over configuration
+export interface VoiceOver {
+  path: string
+  start_time: number
+  volume?: number
+}
+
+// Background music configuration
+export interface BackgroundMusic {
+  path: string
+  volume?: number
+  loop?: boolean
+  fade_in?: number
+  fade_out?: number
+}
+
 export interface WhiteboardConfig {
   scene_width?: number
   scene_height?: number
   background?: string
   frame_rate?: number
+  audio?: {
+    background_music?: BackgroundMusic
+    file_path?: string
+    volume?: number
+    start_time?: number
+    end_time?: number
+    fade_in?: number
+    fade_out?: number
+    loop?: boolean
+  }
   slides: Array<{
     index: number
     duration: number
     skip_rate?: number
+    audio?: {
+      file_path?: string
+      volume?: number
+      loop?: boolean
+      typewriter?: TypewriterAudio
+      drawing_sound?: DrawingSound
+      voice_overs?: VoiceOver[]
+      sound_effects?: SoundEffect[]
+    }
     layers?: Array<{
       type: 'image' | 'text' | 'arrow' | 'shape' | 'video' | 'svg' | 'audio'
       image_path?: string
@@ -156,6 +214,9 @@ export interface WhiteboardConfig {
         fade_in?: number
         fade_out?: number
         loop?: boolean
+      }
+      audio?: {
+        sound_effects?: SoundEffect[]
       }
       arrow_config?: {
         start: [number, number]
@@ -204,15 +265,6 @@ export interface WhiteboardConfig {
     duration: number
     pause_before?: number
   }>
-  audio?: {
-    file_path?: string
-    volume?: number
-    start_time?: number
-    end_time?: number
-    fade_in?: number
-    fade_out?: number
-    loop?: boolean
-  }
 }
 
 export interface WhiteboardOptions {
@@ -299,14 +351,23 @@ export class WhiteboardCliService {
       scene.cameras = scene.sceneCameras
       defaultCamera = scene.sceneCameras.find((cam: any) => cam.isDefault) || scene.sceneCameras[0]
 
-      slides = scene.sceneCameras.map((camera: any, index: number) => ({
-        index,
-        // duration: camera.duration || scene.slideDuration || 3,
-        skip_rate: camera.pauseDuration ? Math.ceil(camera.pauseDuration) : 10,
-        layers: scene.layers.map((layer: any) =>
-          this.mapLayerToConfig({ ...layer }, defaultCamera, camera, this.canvasWidth, this.canvasHeight)
-        )
-      }))
+      slides = scene.sceneCameras.map((camera: any, index: number) => {
+        const slide: any = {
+          index,
+          // duration: camera.duration || scene.slideDuration || 3,
+          skip_rate: camera.pauseDuration ? Math.ceil(camera.pauseDuration) : 10,
+          layers: scene.layers.map((layer: any) =>
+            this.mapLayerToConfig({ ...layer }, defaultCamera, camera, this.canvasWidth, this.canvasHeight)
+          )
+        }
+
+        // Add slide-level audio if present in camera
+        if (camera.audio) {
+          slide.audio = this.buildSlideAudio(camera.audio)
+        }
+
+        return slide
+      })
     } else {
       slides = [
         {
@@ -367,6 +428,62 @@ export class WhiteboardCliService {
   }
 
   /**
+   * Build slide-level audio configuration from camera/slide audio data
+   */
+  private buildSlideAudio(audioData: any): any {
+    if (!audioData) return undefined
+
+    const slideAudio: any = {}
+
+    // Handle file_path for slide voiceover
+    if (audioData.file_path) {
+      slideAudio.file_path = audioData.file_path
+      slideAudio.volume = audioData.volume !== undefined ? audioData.volume : 1
+      slideAudio.loop = audioData.loop !== undefined ? audioData.loop : false
+    }
+
+    // Handle typewriter audio
+    if (audioData.typewriter) {
+      slideAudio.typewriter = {
+        start_time: audioData.typewriter.start_time,
+        num_characters: audioData.typewriter.num_characters,
+        char_interval: audioData.typewriter.char_interval,
+        volume: audioData.typewriter.volume
+      }
+    }
+
+    // Handle drawing sound
+    if (audioData.drawing_sound) {
+      slideAudio.drawing_sound = {
+        start_time: audioData.drawing_sound.start_time,
+        duration: audioData.drawing_sound.duration,
+        volume: audioData.drawing_sound.volume
+      }
+    }
+
+    // Handle voice-overs
+    if (audioData.voice_overs && audioData.voice_overs.length > 0) {
+      slideAudio.voice_overs = audioData.voice_overs.map((vo: any) => ({
+        path: vo.path,
+        start_time: vo.start_time,
+        volume: vo.volume
+      }))
+    }
+
+    // Handle sound effects
+    if (audioData.sound_effects && audioData.sound_effects.length > 0) {
+      slideAudio.sound_effects = audioData.sound_effects.map((effect: any) => ({
+        path: effect.path,
+        start_time: effect.start_time,
+        volume: effect.volume,
+        duration: effect.duration
+      }))
+    }
+
+    return Object.keys(slideAudio).length > 0 ? slideAudio : undefined
+  }
+
+  /**
    * Map scene layer to whiteboard config layer format
    * Utilise camera_position (position dans la caméra par défaut) et la transforme pour la caméra actuelle
    */
@@ -412,6 +529,19 @@ export class WhiteboardCliService {
       baseConfig.morphing_config = layer.morphing_config
     }
 
+    // Build layer audio configuration from layer.audio
+    let layerAudio: any = undefined
+    if (layer.audio && layer.audio.sound_effects && layer.audio.sound_effects.length > 0) {
+      layerAudio = {
+        sound_effects: layer.audio.sound_effects.map((effect: any) => ({
+          path: effect.path,
+          start_time: effect.start_time,
+          volume: effect.volume,
+          duration: effect.duration
+        }))
+      }
+    }
+
     switch (layer.type) {
       case 'text':
         return {
@@ -421,7 +551,6 @@ export class WhiteboardCliService {
             x: layer.camera_position.x,
             y: layer.camera_position.y
           },
-
           text_config: {
             text: layer.text_config.text,
             font_path: `fonts/${layer.text_config.font}.ttf`,
@@ -432,7 +561,8 @@ export class WhiteboardCliService {
             align: layer.text_config.align || 'left',
             direction: layer.text_config.direction || 'ltr',
             draw_mode: layer.text_config.draw_mode || 'ltr'
-          }
+          },
+          audio: layerAudio
         }
 
       case 'arrow':
@@ -458,7 +588,8 @@ export class WhiteboardCliService {
             stroke_width: layer.strokeWidth || 2,
             arrow_size: layer.arrowSize || 20,
             duration: layer.arrowDuration || 1
-          }
+          },
+          audio: layerAudio
         }
 
       case 'shape':
@@ -481,7 +612,8 @@ export class WhiteboardCliService {
           position: {
             x: layer.camera_position.x,
             y: layer.camera_position.y
-          }
+          },
+          audio: layerAudio
         }
 
       case 'audio':
@@ -495,7 +627,8 @@ export class WhiteboardCliService {
             fade_in: layer.audio_config?.fade_in || layer.fadeConfig?.fadeIn,
             fade_out: layer.audio_config?.fade_out || layer.fadeConfig?.fadeOut,
             loop: layer.audio_config?.loop !== undefined ? layer.audio_config.loop : false
-          }
+          },
+          audio: layerAudio
         }
 
       case 'image':
@@ -506,7 +639,8 @@ export class WhiteboardCliService {
           position: {
             x: layer.camera_position.x,
             y: layer.camera_position.y
-          }
+          },
+          audio: layerAudio
         }
     }
   }
