@@ -484,7 +484,7 @@ describe('WhiteboardCliService', () => {
             isDefault: true,
             audio: {
               typewriter: {
-                start_time: 1.0,
+                start_time: 1,
                 num_characters: 50,
                 char_interval: 0.08,
                 volume: 0.4
@@ -506,7 +506,7 @@ describe('WhiteboardCliService', () => {
 
       expect(config.slides[0].audio).toBeDefined()
       expect(config.slides[0].audio?.typewriter).toBeDefined()
-      expect(config.slides[0].audio?.typewriter?.start_time).toBe(1.0)
+      expect(config.slides[0].audio?.typewriter?.start_time).toBe(1)
       expect(config.slides[0].audio?.typewriter?.num_characters).toBe(50)
       expect(config.slides[0].audio?.typewriter?.char_interval).toBe(0.08)
       expect(config.slides[0].audio?.typewriter?.volume).toBe(0.4)
@@ -532,8 +532,8 @@ describe('WhiteboardCliService', () => {
             isDefault: true,
             audio: {
               drawing_sound: {
-                start_time: 0.0,
-                duration: 8.0,
+                start_time: 0,
+                duration: 8,
                 volume: 0.25
               }
             }
@@ -553,8 +553,8 @@ describe('WhiteboardCliService', () => {
 
       expect(config.slides[0].audio).toBeDefined()
       expect(config.slides[0].audio?.drawing_sound).toBeDefined()
-      expect(config.slides[0].audio?.drawing_sound?.start_time).toBe(0.0)
-      expect(config.slides[0].audio?.drawing_sound?.duration).toBe(8.0)
+      expect(config.slides[0].audio?.drawing_sound?.start_time).toBe(0)
+      expect(config.slides[0].audio?.drawing_sound?.duration).toBe(8)
       expect(config.slides[0].audio?.drawing_sound?.volume).toBe(0.25)
     })
 
@@ -580,7 +580,7 @@ describe('WhiteboardCliService', () => {
               voice_overs: [
                 {
                   path: 'audio/slide2_narration.mp3',
-                  start_time: 0.0,
+                  start_time: 0,
                   volume: 0.9
                 }
               ]
@@ -603,7 +603,7 @@ describe('WhiteboardCliService', () => {
       expect(config.slides[0].audio?.voice_overs).toBeDefined()
       expect(config.slides[0].audio?.voice_overs).toHaveLength(1)
       expect(config.slides[0].audio?.voice_overs![0].path).toBe('audio/slide2_narration.mp3')
-      expect(config.slides[0].audio?.voice_overs![0].start_time).toBe(0.0)
+      expect(config.slides[0].audio?.voice_overs![0].start_time).toBe(0)
       expect(config.slides[0].audio?.voice_overs![0].volume).toBe(0.9)
     })
 
@@ -629,7 +629,7 @@ describe('WhiteboardCliService', () => {
               sound_effects: [
                 {
                   path: 'audio/pencil_start.wav',
-                  start_time: 0.0,
+                  start_time: 0,
                   volume: 0.5
                 },
                 {
@@ -657,7 +657,7 @@ describe('WhiteboardCliService', () => {
       expect(config.slides[0].audio?.sound_effects).toBeDefined()
       expect(config.slides[0].audio?.sound_effects).toHaveLength(2)
       expect(config.slides[0].audio?.sound_effects![0].path).toBe('audio/pencil_start.wav')
-      expect(config.slides[0].audio?.sound_effects![0].start_time).toBe(0.0)
+      expect(config.slides[0].audio?.sound_effects![0].start_time).toBe(0)
       expect(config.slides[0].audio?.sound_effects![1].path).toBe('audio/pencil_finish.wav')
       expect(config.slides[0].audio?.sound_effects![1].start_time).toBe(7.5)
     })
@@ -682,27 +682,27 @@ describe('WhiteboardCliService', () => {
             isDefault: true,
             audio: {
               typewriter: {
-                start_time: 1.0,
+                start_time: 1,
                 num_characters: 35,
                 char_interval: 0.1,
                 volume: 0.35
               },
               drawing_sound: {
-                start_time: 0.0,
-                duration: 2.0,
+                start_time: 0,
+                duration: 2,
                 volume: 0.2
               },
               voice_overs: [
                 {
                   path: 'audio/final_message.mp3',
-                  start_time: 0.0,
+                  start_time: 0,
                   volume: 0.9
                 }
               ],
               sound_effects: [
                 {
                   path: 'audio/magic_sparkle.wav',
-                  start_time: 5.0,
+                  start_time: 5,
                   volume: 0.7
                 }
               ]
@@ -722,19 +722,19 @@ describe('WhiteboardCliService', () => {
       const config = service.generateConfig(scene)
 
       expect(config.slides[0].audio).toBeDefined()
-      
+
       // Check typewriter
       expect(config.slides[0].audio?.typewriter).toBeDefined()
       expect(config.slides[0].audio?.typewriter?.num_characters).toBe(35)
-      
+
       // Check drawing sound
       expect(config.slides[0].audio?.drawing_sound).toBeDefined()
-      expect(config.slides[0].audio?.drawing_sound?.duration).toBe(2.0)
-      
+      expect(config.slides[0].audio?.drawing_sound?.duration).toBe(2)
+
       // Check voice-overs
       expect(config.slides[0].audio?.voice_overs).toHaveLength(1)
       expect(config.slides[0].audio?.voice_overs![0].path).toBe('audio/final_message.mp3')
-      
+
       // Check sound effects
       expect(config.slides[0].audio?.sound_effects).toHaveLength(1)
       expect(config.slides[0].audio?.sound_effects![0].path).toBe('audio/magic_sparkle.wav')
@@ -845,13 +845,13 @@ describe('WhiteboardCliService', () => {
                 },
                 {
                   path: 'audio/impact_2.wav',
-                  start_time: 3.0,
+                  start_time: 3,
                   volume: 0.6,
                   duration: 0.4
                 },
                 {
                   path: 'audio/final_ding.wav',
-                  start_time: 6.0,
+                  start_time: 6,
                   volume: 0.8
                 }
               ]
@@ -907,7 +907,7 @@ describe('WhiteboardCliService', () => {
               sound_effects: [
                 {
                   path: 'audio/swoosh.wav',
-                  start_time: 1.0,
+                  start_time: 1,
                   volume: 0.7,
                   duration: 0.5
                 }
