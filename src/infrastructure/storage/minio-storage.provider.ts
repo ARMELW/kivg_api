@@ -54,8 +54,8 @@ export class MinIOStorageProvider implements FileStorageProvider {
           await this.client.makeBucket(bucket, 'us-east-1')
           console.info(`MinIO bucket created: ${bucket}`)
 
-          // Set bucket policy for public read access for exports
-          if (bucket === 'exports') {
+          // Set bucket policy for public read access for exports and audio
+          if (bucket === 'exports' || bucket === 'audio') {
             const policy = {
               Version: '2012-10-17',
               Statement: [
@@ -205,8 +205,8 @@ export class MinIOStorageProvider implements FileStorageProvider {
    */
   async getFileUrl(bucket: string, objectName: string, expiry = 7 * 24 * 60 * 60): Promise<string> {
     try {
-      // For public buckets (like exports), return direct URL
-      if (bucket === 'exports') {
+      // For public buckets (like exports and audio), return direct URL
+      if (bucket === 'exports' || bucket === 'audio') {
         const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'
         const endpoint = process.env.MINIO_ENDPOINT || 'localhost'
         const port = process.env.MINIO_PORT || '9000'
