@@ -198,7 +198,7 @@ export interface WhiteboardConfig {
       text_config?: {
         text: string
         font?: string
-        size?: number
+        font_size?: number
         color?: string | number[]
         align?: string
         style?: string
@@ -555,7 +555,7 @@ export class WhiteboardCliService {
             text: layer.text_config.text,
             font_path: `fonts/${layer.text_config.font}.ttf`,
             font: layer.text_config.font || 'DejaVuSans',
-            size: layer.text_config.size || 32,
+            font_size: layer.text_config.size || 32,
             style: layer.text_config.style || 'normal',
             color: layer.text_config.color || '#000000',
             align: layer.text_config.align || 'left',
@@ -594,25 +594,21 @@ export class WhiteboardCliService {
 
       case 'shape':
         return {
-          ...baseConfig,
+          id: 'kivg_demo_layer',
+          type: 'kivg',
+          fill: true,
+          animate: true,
+          anim_type: 'seq',
           svg_path: layer.svg_path || '',
-          path_template: layer.path_template,
-          svg_sampling_rate: layer.svg_sampling_rate || 12,
-          svg_reverse: layer.svg_reverse || false,
-          reveal_radius: layer.reveal_radius || 1,
-          apply_final_fill: true,
-          final_fill_color: layer.shape_config.fill_color || '#cccccc',
-          reveal_mode: true,
-          shape_config: {
-            //shape: layer.shapeName || 'rectangle',
-            color: layer.shape_config.color || '#000000',
-            width: finalDimensions.width || 100,
-            height: finalDimensions.height || 100
-          },
+          line_color: [0, 0, 0, 255],
+          hand_draw: true,
+          fps: 30,
           position: {
             x: layer.camera_position.x,
             y: layer.camera_position.y
           },
+          width: finalDimensions.width,
+          height: finalDimensions.height,
           audio: layerAudio
         }
 
@@ -792,7 +788,8 @@ export class WhiteboardCliService {
         '--threads',
         preset.threads.toString(),
         '--aspect-ratio',
-        options.aspectRatio
+        options.aspectRatio,
+        '--fast'
       ]
 
       if (options.quality === 'preview') {

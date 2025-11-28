@@ -110,6 +110,15 @@ export const ExitAnimationSchema = z.object({
   easing: EasingFunctionSchema.optional()
 })
 
+// Hand Exit Animation Types
+export const HandExitAnimationTypeSchema = z.enum(['slide_down', 'slide_up', 'slide_left', 'slide_right', 'none'])
+
+export const HandExitAnimationSchema = z.object({
+  type: HandExitAnimationTypeSchema,
+  duration: z.number().min(0).max(5).default(0.67),
+  easing: EasingFunctionSchema.optional()
+})
+
 // Transition Types
 export const TransitionTypeSchema = z.enum([
   // Fade transitions
@@ -225,7 +234,8 @@ export const LayerConfigSchema = z.object({
   scale: z.number().min(0.1).max(10).optional().default(1),
   opacity: z.number().min(0).max(1).optional().default(1),
   entrance_animation: EntranceAnimationSchema.optional(),
-  exit_animation: ExitAnimationSchema.optional()
+  exit_animation: ExitAnimationSchema.optional(),
+  hand_exit_animation: HandExitAnimationSchema.optional()
 })
 
 // Slide Configuration
@@ -253,6 +263,8 @@ export type EntranceAnimationType = z.infer<typeof EntranceAnimationTypeSchema>
 export type EntranceAnimation = z.infer<typeof EntranceAnimationSchema>
 export type ExitAnimationType = z.infer<typeof ExitAnimationTypeSchema>
 export type ExitAnimation = z.infer<typeof ExitAnimationSchema>
+export type HandExitAnimationType = z.infer<typeof HandExitAnimationTypeSchema>
+export type HandExitAnimation = z.infer<typeof HandExitAnimationSchema>
 export type TransitionType = z.infer<typeof TransitionTypeSchema>
 export type Transition = z.infer<typeof TransitionSchema>
 export type LayerMode = z.infer<typeof LayerModeSchema>
