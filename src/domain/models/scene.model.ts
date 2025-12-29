@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// ===== Shared Validation Patterns =====
+const HexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/)
+
 // ===== Position =====
 const PositionSchema = z.object({
   x: z.number(),
@@ -151,7 +154,7 @@ export const CameraSchema = z.object({
 const GridConfigSchema = z.object({
   type: z.enum(['dots', 'lines', 'squares']),
   size: z.number().min(1).max(200).optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: HexColorSchema.optional(),
   opacity: z.number().min(0).max(1).optional()
 })
 
@@ -162,7 +165,7 @@ const TemplateConfigSchema = z.object({
 })
 
 const BackgroundConfigSchema = z.object({
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: HexColorSchema.optional(),
   grid: GridConfigSchema.optional(),
   template: TemplateConfigSchema.optional()
 })
@@ -171,7 +174,7 @@ const BackgroundConfigSchema = z.object({
 const SceneTransitionSchema = z.object({
   type: z.enum(['fade', 'slide', 'none']),
   duration: z.number().min(0).max(10),
-  after_slide: z.number().min(0).max(30),
+  after_slide: z.number().min(0).max(30).optional(), // Optional since not all transition types use it
   easing: z.enum(['linear', 'ease-in', 'ease-out', 'ease-in-out']).optional()
 })
 
@@ -209,7 +212,7 @@ export const SceneSchema = z.object({
   animation: z.string().default('fade'),
   // ===== Visual =====
   backgroundImage: z.string().optional(),
-  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  backgroundColor: HexColorSchema.optional(),
   background: BackgroundConfigSchema.optional(),
   sceneImage: z.string().optional(),
   sceneWidth: z.number().int().min(320).max(7680).optional(),

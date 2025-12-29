@@ -35,10 +35,12 @@ async function migrateLayerCameraPosition() {
       }
 
       let needsUpdate = false
+      let sceneLayersUpdated = 0  // Track layers updated for this scene
       const updatedLayers = layers.map(layer => {
         // Check if layer has position but no camera_position
         if (layer.position && !layer.camera_position) {
           needsUpdate = true
+          sceneLayersUpdated++
           layersUpdatedCount++
           return {
             ...layer,
@@ -59,7 +61,7 @@ async function migrateLayerCameraPosition() {
           .where(eq(scenes.id, scene.id))
         
         updatedCount++
-        console.log(`✅ Updated scene ${scene.id}: ${scene.title} (${layersUpdatedCount} layers)`)
+        console.log(`✅ Updated scene ${scene.id}: ${scene.title} (${sceneLayersUpdated} layers)`)
       }
     }
 

@@ -6,6 +6,9 @@ import type { Routes } from '@/domain/types'
 import { PreviewRepository } from '../repositories/preview.repository'
 import { SceneRepository } from '../repositories/scene.repository'
 
+// Shared validation patterns
+const HexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/)
+
 export class SceneController implements Routes {
   public controller: OpenAPIHono
   private sceneRepository: SceneRepository
@@ -40,7 +43,7 @@ export class SceneController implements Routes {
                   duration: z.number().int().optional().default(10),
                   // ===== Visual =====
                   backgroundImage: z.string().optional(),
-                  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+                  backgroundColor: HexColorSchema.optional(),
                   background: z.any().optional(),
                   sceneWidth: z.number().int().min(320).max(7680).optional().default(1920),
                   sceneHeight: z.number().int().min(180).max(4320).optional().default(1080),
@@ -113,9 +116,9 @@ export class SceneController implements Routes {
             occlusionCulling: body.occlusionCulling || false,
             occlusionCullingConfig: body.occlusionCullingConfig,
             // ===== DEPRECATED (kept for backward compatibility) =====
-            transitionType: body.transitionType || body.transition?.type || 'fade',
+            transitionType: body.transitionType || (body.transition && typeof body.transition === 'object' ? body.transition.type : undefined) || 'fade',
             draggingSpeed: 1,
-            slideDuration: body.slideDuration || body.transition?.duration || 0,
+            slideDuration: body.slideDuration || (body.transition && typeof body.transition === 'object' ? body.transition.duration : undefined) || 0,
             syncSlideWithVoice: false
           })
 
@@ -337,7 +340,7 @@ export class SceneController implements Routes {
                   duration: z.number().int().optional(),
                   // ===== Visual =====
                   backgroundImage: z.string().optional(),
-                  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+                  backgroundColor: HexColorSchema.optional(),
                   background: z.any().optional(),
                   sceneWidth: z.number().int().min(320).max(7680).optional(),
                   sceneHeight: z.number().int().min(180).max(4320).optional(),
