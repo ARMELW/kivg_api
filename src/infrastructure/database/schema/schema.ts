@@ -293,12 +293,18 @@ export const scenes = pgTable('scenes', {
         type: 'image' | 'text' | 'shape' | 'video' | 'audio'
         mode: 'draw' | 'static' | 'animated'
         position: { x: number; y: number }
-        cameraPosition?: { x: number; y: number }
+        camera_position?: { x: number; y: number }
         width: number
         height: number
         zIndex: number
         scale: number
+        scaleX?: number
+        scaleY?: number
         opacity: number
+        rotation?: number
+        flipX?: boolean
+        flipY?: boolean
+        visible?: boolean
         skipRate?: number
         imagePath?: string
         text?: string
@@ -307,6 +313,23 @@ export const scenes = pgTable('scenes', {
         animationSpeed?: number
         endDelay?: number
         handType?: string
+        text_config?: any
+        shape_config?: any
+        audio_config?: any
+        entrance_animation?: any
+        exit_animation?: any
+        text_animation_mode?: string
+        drawing_animation_config?: any
+        hand_overlay_config?: any
+        shape_drawing_config?: any
+        eraser_config?: any
+        morphing_config?: any
+        occlusionMode?: string
+        occlusionErase?: any
+        path_template?: string
+        timingConfig?: any
+        cachedImage?: string
+        [key: string]: any
       }>
     >()
     .default([]),
@@ -335,6 +358,17 @@ export const scenes = pgTable('scenes', {
   multiTimeline: jsonb('multi_timeline').$type<any>().default({}),
   audio: jsonb('audio').$type<any>().default({}),
   sceneAudio: jsonb('scene_audio').$type<any>(),
+  // ===== NEW FIELDS =====
+  sceneWidth: integer('scene_width').default(1920),
+  sceneHeight: integer('scene_height').default(1080),
+  backgroundColor: text('background_color'),
+  background: jsonb('background').$type<any>(),
+  transition: jsonb('transition').$type<any>(),
+  waitDurationBeforeNextScene: real('wait_duration_before_next_scene').default(2.0),
+  eraserConfig: jsonb('eraser_config').$type<any>(),
+  occlusionCulling: boolean('occlusion_culling').default(false),
+  occlusionCullingConfig: jsonb('occlusion_culling_config').$type<any>(),
+  // ===== DEPRECATED (kept for backward compatibility) =====
   transitionType: text('transition_type').default('fade'), // none, fade, slide
   draggingSpeed: real('dragging_speed').default(1),
   slideDuration: integer('slide_duration').default(0),
