@@ -38,9 +38,24 @@ export class SceneController implements Routes {
                   title: z.string().min(1),
                   content: z.string().optional(),
                   duration: z.number().int().optional().default(10),
+                  // ===== Visual =====
                   backgroundImage: z.string().optional(),
+                  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+                  background: z.any().optional(),
+                  sceneWidth: z.number().int().min(320).max(7680).optional().default(1920),
+                  sceneHeight: z.number().int().min(180).max(4320).optional().default(1080),
+                  // ===== Data =====
                   layers: z.array(LayerSchema).optional().default([]),
                   cameras: z.array(z.any()).optional().default([]),
+                  sceneCameras: z.array(z.any()).optional().default([]),
+                  // ===== Transitions =====
+                  transition: z.any().optional(),
+                  waitDurationBeforeNextScene: z.number().min(0).max(30).optional().default(2.0),
+                  // ===== Advanced Features =====
+                  eraserConfig: z.any().optional(),
+                  occlusionCulling: z.boolean().optional().default(false),
+                  occlusionCullingConfig: z.any().optional(),
+                  // ===== DEPRECATED (kept for backward compatibility) =====
                   transitionType: z.enum(['none', 'fade', 'slide']).optional().default('fade')
                 })
               }
@@ -76,17 +91,31 @@ export class SceneController implements Routes {
             content: body.content,
             duration: body.duration || 10,
             animation: 'fade',
+            // ===== Visual =====
             backgroundImage: body.backgroundImage,
+            backgroundColor: body.backgroundColor,
+            background: body.background,
             sceneImage: undefined,
+            sceneWidth: body.sceneWidth || 1920,
+            sceneHeight: body.sceneHeight || 1080,
+            // ===== Data =====
             layers: body.layers || [],
             cameras: body.cameras || [],
             sceneCameras: body.sceneCameras || [],
             multiTimeline: {},
             audio: {},
             sceneAudio: undefined,
-            transitionType: body.transitionType || 'fade',
+            // ===== Transitions =====
+            transition: body.transition,
+            waitDurationBeforeNextScene: body.waitDurationBeforeNextScene || 2.0,
+            // ===== Advanced Features =====
+            eraserConfig: body.eraserConfig,
+            occlusionCulling: body.occlusionCulling || false,
+            occlusionCullingConfig: body.occlusionCullingConfig,
+            // ===== DEPRECATED (kept for backward compatibility) =====
+            transitionType: body.transitionType || body.transition?.type || 'fade',
             draggingSpeed: 1,
-            slideDuration: 0,
+            slideDuration: body.slideDuration || body.transition?.duration || 0,
             syncSlideWithVoice: false
           })
 
@@ -306,9 +335,24 @@ export class SceneController implements Routes {
                   title: z.string().optional(),
                   content: z.string().optional(),
                   duration: z.number().int().optional(),
+                  // ===== Visual =====
                   backgroundImage: z.string().optional(),
+                  backgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+                  background: z.any().optional(),
+                  sceneWidth: z.number().int().min(320).max(7680).optional(),
+                  sceneHeight: z.number().int().min(180).max(4320).optional(),
+                  // ===== Data =====
                   layers: z.array(z.any()).optional(),
                   cameras: z.array(z.any()).optional(),
+                  sceneCameras: z.array(z.any()).optional(),
+                  // ===== Transitions =====
+                  transition: z.any().optional(),
+                  waitDurationBeforeNextScene: z.number().min(0).max(30).optional(),
+                  // ===== Advanced Features =====
+                  eraserConfig: z.any().optional(),
+                  occlusionCulling: z.boolean().optional(),
+                  occlusionCullingConfig: z.any().optional(),
+                  // ===== DEPRECATED (kept for backward compatibility) =====
                   transitionType: z.enum(['none', 'fade', 'slide']).optional()
                 })
               }
