@@ -57,11 +57,18 @@ export class SceneRepository implements SceneRepositoryInterface {
 
   async create(data: Omit<Scene, 'id' | 'createdAt' | 'updatedAt'>): Promise<Scene> {
     const now = new Date()
+    
+    // Ensure all layers have camera_position
+    const processedData = {
+      ...data,
+      layers: data.layers ? this.ensureLayerCameraPosition(data.layers) : []
+    }
+    
     const [result] = await db
       .insert(scenes)
       .values({
         id: randomUUID(),
-        ...data,
+        ...processedData,
         createdAt: now,
         updatedAt: now
       })
@@ -80,6 +87,12 @@ export class SceneRepository implements SceneRepositoryInterface {
       patch.createdAt = new Date(patch.createdAt)
     }
     patch.updatedAt = patch.updatedAt ?? new Date()
+
+    // Validate and sync camera_position for layers if layers are being updated
+    if (patch.layers && Array.isArray(patch.layers)) {
+      patch.layers = this.ensureLayerCameraPosition(patch.layers)
+    }
+
     const [result] = await db.update(scenes).set(patch).where(eq(scenes.id, id)).returning()
 
     return this.mapToScene(result)
@@ -107,18 +120,33 @@ export class SceneRepository implements SceneRepositoryInterface {
         content: original.content,
         duration: original.duration,
         animation: original.animation,
+        // ===== Visual =====
         backgroundImage: original.backgroundImage,
+        backgroundColor: original.backgroundColor as any,
+        background: original.background as any,
         sceneImage: original.sceneImage,
+        sceneWidth: original.sceneWidth as any,
+        sceneHeight: original.sceneHeight as any,
+        // ===== Data =====
         layers: original.layers as any,
         cameras: original.cameras as any,
         sceneCameras: original.sceneCameras as any,
         multiTimeline: original.multiTimeline as any,
         audio: original.audio as any,
         sceneAudio: original.sceneAudio as any,
+        // ===== Transitions =====
+        transition: original.transition as any,
+        waitDurationBeforeNextScene: original.waitDurationBeforeNextScene as any,
+        // ===== Advanced Features =====
+        eraserConfig: original.eraserConfig as any,
+        occlusionCulling: original.occlusionCulling as any,
+        occlusionCullingConfig: original.occlusionCullingConfig as any,
+        // ===== DEPRECATED (kept for backward compatibility) =====
         transitionType: original.transitionType,
         draggingSpeed: original.draggingSpeed,
         slideDuration: original.slideDuration,
         syncSlideWithVoice: original.syncSlideWithVoice,
+        // ===== Timestamps =====
         createdAt: now,
         updatedAt: now
       })
@@ -164,6 +192,24 @@ export class SceneRepository implements SceneRepositoryInterface {
     return Number(result?.total ?? 0)
   }
 
+  /**
+   * Ensures all layers have camera_position set.
+   * If a layer has position but no camera_position, it copies position to camera_position.
+   * This maintains backward compatibility and ensures the critical camera_position field is always present.
+   */
+  private ensureLayerCameraPosition(layers: any[]): any[] {
+    return layers.map(layer => {
+      // If layer has position but no camera_position, copy position to camera_position
+      if (layer.position && !layer.camera_position) {
+        return {
+          ...layer,
+          camera_position: { ...layer.position }
+        }
+      }
+      return layer
+    })
+  }
+
   private mapToScene(data: any): Scene {
     //  console.log('Mapping scene data:', data)
     return {
@@ -173,18 +219,33 @@ export class SceneRepository implements SceneRepositoryInterface {
       content: data.content ?? undefined,
       duration: data.duration,
       animation: data.animation ?? undefined,
+      // ===== Visual =====
       backgroundImage: data.backgroundImage ?? undefined,
+      backgroundColor: data.backgroundColor ?? undefined,
+      background: data.background ?? undefined,
       sceneImage: data.sceneImage ?? undefined,
+      sceneWidth: data.sceneWidth ?? undefined,
+      sceneHeight: data.sceneHeight ?? undefined,
+      // ===== Data =====
       layers: data.layers || [],
       cameras: data.cameras || [],
       sceneCameras: data.sceneCameras || [],
       multiTimeline: data.multiTimeline || {},
       audio: data.audio || {},
       sceneAudio: data.sceneAudio ?? undefined,
+      // ===== Transitions =====
+      transition: data.transition ?? undefined,
+      waitDurationBeforeNextScene: data.waitDurationBeforeNextScene ?? undefined,
+      // ===== Advanced Features =====
+      eraserConfig: data.eraserConfig ?? undefined,
+      occlusionCulling: data.occlusionCulling ?? undefined,
+      occlusionCullingConfig: data.occlusionCullingConfig ?? undefined,
+      // ===== DEPRECATED (kept for backward compatibility) =====
       transitionType: data.transitionType ?? undefined,
       draggingSpeed: data.draggingSpeed ?? undefined,
       slideDuration: data.slideDuration ?? undefined,
       syncSlideWithVoice: data.syncSlideWithVoice ?? undefined,
+      // ===== Timestamps =====
       createdAt: data.createdAt,
       updatedAt: data.updatedAt
     }
