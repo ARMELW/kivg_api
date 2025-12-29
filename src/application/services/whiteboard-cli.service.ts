@@ -384,11 +384,11 @@ export class WhiteboardCliService {
     const transitions =
       scene.transitionType !== 'none'
         ? slides.slice(0, -1).map((slide: any, index: number) => ({
-            after_slide: index,
-            type: scene.transitionType || 'fade',
-            duration: 0.5,
-            pause_before: 0.5
-          }))
+          after_slide: index,
+          type: scene.transitionType || 'fade',
+          duration: 0.5,
+          pause_before: 0.5
+        }))
         : []
 
     // Build audio configuration from scene
@@ -560,7 +560,9 @@ export class WhiteboardCliService {
             color: layer.text_config.color || '#000000',
             align: layer.text_config.align || 'left',
             direction: layer.text_config.direction || 'ltr',
-            draw_mode: layer.text_config.draw_mode || 'ltr'
+            draw_mode: layer.text_config.draw_mode || 'ltr',
+            smooth_handwriting: true,
+            pause_after_word: 10
           },
           audio: layerAudio
         }
@@ -659,7 +661,6 @@ export class WhiteboardCliService {
     if (!currentCamera || !currentCamera.position) {
       return { width: layerWidth, height: layerHeight }
     }
-
     const zoom = currentCamera.scale || 1
     const cameraPhysicalWidth = currentCamera.width || 800
     const cameraPhysicalHeight = currentCamera.height || 450
@@ -775,7 +776,7 @@ export class WhiteboardCliService {
       const preset = QUALITY_PRESETS[options.quality]
       try {
         await import('node:fs/promises').then((fs) => fs.mkdir(debugDir, { recursive: true }))
-      } catch {}
+      } catch { }
       await writeFile(debugPath, JSON.stringify(config, null, 2))
 
       const args = [
