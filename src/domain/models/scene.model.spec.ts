@@ -221,15 +221,15 @@ describe('LayerSchema', () => {
     })
   })
 
-  describe('cameraPosition property', () => {
-    it('should accept a layer with cameraPosition', () => {
+  describe('camera_position property', () => {
+    it('should accept a layer with camera_position', () => {
       const layerWithCameraPosition = {
         id: 'layer-123',
         name: 'Test Layer',
         type: 'text' as const,
         mode: 'draw' as const,
         position: { x: 960, y: 540 },
-        cameraPosition: { x: 960, y: 540 },
+        camera_position: { x: 960, y: 540 },
         width: 300,
         height: 57.6,
         zIndex: 1,
@@ -241,11 +241,11 @@ describe('LayerSchema', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.cameraPosition).toEqual({ x: 960, y: 540 })
+        expect(result.data.camera_position).toEqual({ x: 960, y: 540 })
       }
     })
 
-    it('should accept a layer without cameraPosition (backward compatibility)', () => {
+    it('should accept a layer without camera_position (backward compatibility)', () => {
       const layerWithoutCameraPosition = {
         id: 'layer-456',
         name: 'Old Layer',
@@ -263,18 +263,18 @@ describe('LayerSchema', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.cameraPosition).toBeUndefined()
+        expect(result.data.camera_position).toBeUndefined()
       }
     })
 
-    it('should accept cameraPosition with negative values (layer outside camera viewport)', () => {
+    it('should accept camera_position with negative values (layer outside camera viewport)', () => {
       const layerOutsideViewport = {
         id: 'layer-789',
         name: 'Off-screen Layer',
         type: 'text' as const,
         mode: 'draw' as const,
         position: { x: 2500, y: 1500 },
-        cameraPosition: { x: 2500, y: 1500 },
+        camera_position: { x: 2500, y: 1500 },
         width: 200,
         height: 50,
         zIndex: 1,
@@ -286,18 +286,18 @@ describe('LayerSchema', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.cameraPosition).toEqual({ x: 2500, y: 1500 })
+        expect(result.data.camera_position).toEqual({ x: 2500, y: 1500 })
       }
     })
 
-    it('should accept cameraPosition with decimal values', () => {
+    it('should accept camera_position with decimal values', () => {
       const layerWithDecimalCameraPosition = {
         id: 'layer-decimal',
         name: 'Decimal Camera Position',
         type: 'image' as const,
         mode: 'draw' as const,
         position: { x: 100.5, y: 200.75 },
-        cameraPosition: { x: 100.5, y: 200.75 },
+        camera_position: { x: 100.5, y: 200.75 },
         width: 300,
         height: 150,
         zIndex: 1,
@@ -309,18 +309,18 @@ describe('LayerSchema', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
-        expect(result.data.cameraPosition).toEqual({ x: 100.5, y: 200.75 })
+        expect(result.data.camera_position).toEqual({ x: 100.5, y: 200.75 })
       }
     })
 
-    it('should reject cameraPosition with invalid structure', () => {
+    it('should reject camera_position with invalid structure', () => {
       const layerWithInvalidCameraPosition = {
         id: 'layer-invalid',
         name: 'Invalid Camera Position',
         type: 'text' as const,
         mode: 'draw' as const,
         position: { x: 100, y: 200 },
-        cameraPosition: { x: 'invalid', y: 200 }, // Invalid: x should be number
+        camera_position: { x: 'invalid', y: 200 }, // Invalid: x should be number
         width: 300,
         height: 150,
         zIndex: 1,
@@ -333,14 +333,14 @@ describe('LayerSchema', () => {
       expect(result.success).toBe(false)
     })
 
-    it('should reject cameraPosition missing x or y coordinate', () => {
+    it('should reject camera_position missing x or y coordinate', () => {
       const layerMissingX = {
         id: 'layer-missing-x',
         name: 'Missing X',
         type: 'text' as const,
         mode: 'draw' as const,
         position: { x: 100, y: 200 },
-        cameraPosition: { y: 200 }, // Missing x
+        camera_position: { y: 200 }, // Missing x
         width: 300,
         height: 150,
         zIndex: 1,
@@ -354,7 +354,7 @@ describe('LayerSchema', () => {
         type: 'text' as const,
         mode: 'draw' as const,
         position: { x: 100, y: 200 },
-        cameraPosition: { x: 100 }, // Missing y
+        camera_position: { x: 100 }, // Missing y
         width: 300,
         height: 150,
         zIndex: 1,
@@ -373,7 +373,7 @@ describe('LayerSchema', () => {
         type: 'text' as const,
         mode: 'draw' as const,
         position: { x: 960, y: 540 },
-        cameraPosition: { x: 960, y: 540 },
+        camera_position: { x: 960, y: 540 },
         width: 300,
         height: 57.6,
         zIndex: 1,
@@ -388,7 +388,7 @@ describe('LayerSchema', () => {
         type: 'image' as const,
         mode: 'static' as const,
         position: { x: 700, y: 400 },
-        cameraPosition: { x: 700, y: 400 },
+        camera_position: { x: 700, y: 400 },
         width: 1920,
         height: 1080,
         zIndex: 1,
@@ -403,7 +403,7 @@ describe('LayerSchema', () => {
         type: 'shape' as const,
         mode: 'draw' as const,
         position: { x: 800, y: 450 },
-        cameraPosition: { x: 800, y: 450 },
+        camera_position: { x: 800, y: 450 },
         width: 200,
         height: 150,
         zIndex: 1,
